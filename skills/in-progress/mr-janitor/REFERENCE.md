@@ -1,46 +1,114 @@
 # Mr. Janitor — Reference
 
-Lessons and decisions from the founding session (orphic-inc/stellar-api, 2026-05-31).
+Command recipes and the lessons behind each rule. SKILL.md carries the principles; this file carries the concrete commands and the gotchas that produced them.
 
-## Branch Cleanup Gotchas
+Sources: founding session (orphic-inc/stellar-api, 2026-05-31) and a battle-testing pass across a 24-repo `~/git/` folder (third-party clones, no-remote repos, a 59-branch graveyard, `gh`-named remotes, duplicate clones).
 
-- **Always `git fetch -p` first.** Stale local remote-tracking refs cause `git push --delete` to error with "remote ref does not exist" even when some deletes succeed.
-- **Use `gh api -X DELETE` not `git push origin --delete`.** Org repos often block the git protocol delete due to branch protection or token scope. The GitHub API respects your `gh` token directly.
-- **Check open PRs before deleting.** Exclude any branch with an open PR: `gh pr list --state open --json headRefName`.
-- **Keep `main`, `develop`, `staging` by default.** These are environment branches, not feature branches.
+## Phase 0 — Ownership Gate
 
-## Fork Sync Gotchas
+The single most important guard. Most failure modes are fail-*open* (acting on a repo you shouldn't).
 
-- **Check divergence with `git log main...upstream/main --left-right`** before merging. `<` = fork-only, `>` = upstream-only.
-- **Fork-specific commits** (CI workflows, fork-level config) should sit on top of upstream — fast-forward is the right merge strategy.
-- **`develop` on a fork** is often stale or diverged. Cleanest fix: delete and recreate from `main`.
-- **Tags don't sync automatically.** After pushing tags to `origin`, do `git fetch upstream --tags && git push origin --tags` on the fork clone separately.
+```bash
+# Resolve the remote BY NAME — never assume "origin". gh-cloned repos and forks
+# use other names (gh, upstream). A hardcoded `origin` check silently fails open:
+# a repo whose remote is named `gh` was misread as "no remote" → LOCAL-ONLY → swept.
+REMOTE=$(git remote | grep -qx origin && echo origin || git remote | head -1)
+URL=$(git remote get-url "$REMOTE" 2>/dev/null)
 
-## Version Tagging
+OWNER=$(printf '%s' "$URL" | sed -E 's#(git@[^:]+:|https?://[^/]+/)##; s#/?\.git$##; s#/.*##')
+REPO=$(basename "$URL" .git)
+PUSH=$(gh api "repos/$OWNER/$REPO" --jq '.permissions.push' 2>/dev/null)
+```
 
-- **Annotated tags only** (`git tag -a`). Lightweight tags don't carry messages.
-- **Verify commit exists** in the target repo's object store (`git cat-file -t <hash>`) before tagging. Cross-repo hashes don't transfer without `git fetch upstream`.
-- **Duplicate tags on same commit** (e.g. `v0.4.9` and `v0.4.99`) are valid but note them as aliases in CHANGELOG.
-- **Grill the version scheme** before applying any tags — the right milestones are project-specific. Use Phase 1 to establish them.
+- **No remote at all** → LOCAL-ONLY mode. The repo is yours by definition but has nowhere to push: clean local branches, skip remote deletes / fork sync / pushes.
+- **No push rights, or owner isn't you/your org/your fork** → HARD STOP. Activity, stars, recency are never authorization — ownership is.
+- **Non-GitHub host** (parse host from `$URL`) → `gh api` doesn't apply. The local-git phases work unchanged; use the forge's CLI (`glab` for GitLab) for push-rights/PRs/remote-deletes, or confirm ownership with the user. Never read an empty `gh` result as "no access" — that fails closed on your own repo.
 
-## CHANGELOG Format
+## Phase 1 — Architecture Detection
 
-Use [Keep a Changelog](https://keepachangelog.com/) with `Added / Changed / Fixed` sections per version. Tips:
+Prefer local git (offline, no auth); reach for the host API only for remote-only signal.
 
-- **Lump** closely related commits under one bullet (e.g. "Param validation rolled out: forum topics, forum posts, communities routes")
-- **Cite hashes** only for notable multi-commit eras (e.g. the v0.2.0 audit wave)
-- **Alias** duplicate tags inline: `## [0.3.1] — date _(alias: v0.4.1)_`
-- **Compare links** at bottom of file using `v{tag}...v{tag}` GitHub URL format
+```bash
+# Default branch — try remote HEAD, then API, then current branch. Never assume main.
+DEFAULT=$(git symbolic-ref --short "refs/remotes/$REMOTE/HEAD" 2>/dev/null | sed "s#$REMOTE/##") \
+  || DEFAULT=$(gh api "repos/$OWNER/$REPO" --jq '.default_branch' 2>/dev/null) \
+  || DEFAULT=$(git branch --show-current)
 
-## Stub Tracking
+# Bot/generated repo (>80% bot commits → build artifact, source is elsewhere)
+git log -20 --format='%s' | grep -c "^\[bot\]\|^chore(release)\|^Merge pull request"
 
-Stubs worth tracking are routes/features that are:
-- Live and working (frontend consuming them)
-- But with incomplete response contracts or partial feature coverage
-- NOT broken — just incomplete
+# Release automation present → tags + CHANGELOG are automated, skip Phases 3 & 5
+ls .releaserc* .goreleaser.yml release-please-config.json .bumpversion.cfg 2>/dev/null
+# language equivalents: pom.xml (maven-release), Cargo.toml (cargo-release),
+# pyproject.toml (setuptools-scm/tbump), package.json (semantic-release/changesets)
 
-Good candidates: a simple resource endpoint that returns bare `{}` instead of a meaningful response, a feature with no write path yet, a model with no routes at all.
+# Tag scheme — semver (v1.2.3) vs milestone/build (b1046, defcon32). Respect what exists.
+git tag | head
 
-File GitHub issues only with explicit user authorization. Save to memory otherwise.
+# Maintenance mode — no push in >12 months → confirm archival intent first
+git log -1 --format=%cr
+```
 
-**Note:** mr-janitor stub tracking is retrospective — it finds gaps in existing code. If you're starting a new feature, use [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) instead; tests should come before implementation, not after.
+- **Protected branch set** = `$DEFAULT` + `develop` + `staging` + open-PR branches + long-lived release branches (`3.x`, `release-7x`) + tracking branches (`upstream`, `vendor`). Build this once; every deletion phase excludes it.
+- Don't overlay semver on a milestone/build tag scheme — it's correct for embedded/hardware/event repos.
+
+## Phase 2 — Branch Cleanup
+
+```bash
+git fetch -p   # prune stale remote-tracking refs FIRST, always
+
+# Remote deletes via host API — git push --delete hits org branch-protection / token walls
+gh api -X DELETE "repos/$OWNER/$REPO/git/refs/heads/<branch>"
+
+# Local: MERGED ONLY. -d refuses unmerged; blanket -D destroys it silently.
+git branch --merged "$DEFAULT" | grep -vE "^\*|^  ($DEFAULT|develop|staging)$" \
+  | sed 's/^ *//' | xargs -r git branch -d
+
+git branch --no-merged   # list these; force-delete only what the user confirms, one at a time
+```
+
+- **Never blanket `git branch -D`.** A graveyard repo hides unmerged work — one test repo had 56 unmerged feature branches that `-D` would have erased.
+- `git branch --merged` with no ref checks against *current HEAD*, not `$DEFAULT` — always pass `$DEFAULT` explicitly.
+- Check open PRs before deleting: `gh pr list --state open --json headRefName`.
+
+## Phase 3 — Version Tagging
+
+- Detect first (see SKILL table). Skip entirely if release tooling is present.
+- **Annotated tags only** (`git tag -a`); lightweight tags carry no message.
+- **Verify the commit exists** in the object store (`git cat-file -t <hash>`) before tagging — cross-repo hashes need `git fetch upstream` first.
+- Duplicate tags on one commit (e.g. `v0.4.9` / `v0.4.99`) are valid; alias them in the CHANGELOG.
+- Manual retroactive tagging is a last resort (no tooling + personal/archived repo). For active repos, recommend adopting [release-please](https://github.com/googleapis/release-please) instead.
+
+## Phase 4 — Fork Sync
+
+Forks only. Guard before touching anything:
+
+```bash
+git remote | grep -qx upstream || echo "no upstream — not a fork, skip Phase 4"
+[ -z "$(git status --porcelain)" ] || echo "dirty tree — stash or commit first"
+
+git log "$DEFAULT"...upstream/"$DEFAULT" --left-right   # < fork-only, > upstream-only
+git checkout "$DEFAULT" && git merge --ff-only upstream/"$DEFAULT"
+git fetch upstream --tags && git push "$REMOTE" --tags   # tags don't sync automatically
+```
+
+- **Refuse on a dirty tree** — `checkout`/`merge` carry or clobber uncommitted work.
+- **Recreating `develop`: confirm it's fully merged first, then `-d`.** A stale-looking `develop` may hold unmerged commits (one test repo: 7). Never blanket `-D` — this corrects the founding-session note that said "delete and recreate."
+
+## Phase 5 — CHANGELOG
+
+```bash
+git log --oneline <prev-tag>..<new-tag>
+```
+
+- **Read an existing CHANGELOG before writing — don't clobber it.** Append a new version section; don't regenerate.
+- [Keep a Changelog](https://keepachangelog.com/): `Added / Changed / Fixed` per version.
+- Lump closely related commits under one bullet; cite hashes only for notable multi-commit eras; compare-links at the bottom.
+
+## Phase 6 — Stub Tracking
+
+- Surface dedicated files first: `TODO.md`, `FIXME.md`, `NOTES.md`.
+- Then grep language-agnostic markers: `TODO`/`FIXME`/`HACK`, `raise NotImplementedError`, `todo!()`/`unimplemented!()`, `throw new Error(... not implemented)`, HTTP `501`.
+- Worth tracking: live-but-incomplete features — a route returning bare `{}`, a model with no write path. Not broken, just unfinished.
+- File issues only with explicit user authorization; otherwise note in memory.
+- Retrospective by nature — finds gaps in existing code. Starting fresh? Use [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) instead.
