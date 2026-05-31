@@ -28,11 +28,13 @@ Run each phase in order. Skip phases the user has already resolved.
 **Run this before anything else. Destructive housekeeping on a repo you don't control is the worst failure mode.**
 
 ```bash
-# Resolve owner/repo from the local remote — don't assume you were handed it
-URL=$(git remote get-url origin 2>/dev/null)
+# Resolve the remote by NAME first — never assume it's called "origin".
+# Repos cloned via `gh`, forks, or custom setups use other names (gh, upstream…).
+REMOTE=$(git remote | grep -qx origin && echo origin || git remote | head -1)
+URL=$(git remote get-url "$REMOTE" 2>/dev/null)
 
 if [ -z "$URL" ]; then
-  # No remote → purely local repo. It's yours by definition, but there's
+  # Genuinely no remote → purely local repo. Yours by definition, but there's
   # nowhere to push: run LOCAL-ONLY mode. Phase 2 cleans local branches,
   # Phases 3-5 can't push (tags/CHANGELOG stay local), Phase 4 is N/A.
   echo "no remote — LOCAL-ONLY mode (skip remote deletes, fork sync, and pushes)"
@@ -44,6 +46,8 @@ else
 fi
 ```
 
+**Note the remote name (`$REMOTE`) — it may not be `origin`.** Every later `git push`/`git fetch`/branch-delete must use `$REMOTE`, not a hardcoded `origin`, or it targets the wrong place (or nothing).
+
 **Decision:**
 - **No remote** → local-only mode (above). Proceed, but every remote operation is skipped.
 - **Remote exists and `push` is `false`/empty, or owner isn't you/your org/your fork → HARD STOP.** This is a third-party clone (an upstream you track for reference). Report: *"This is a clone of `{owner}`'s repo and you don't have push rights — refusing to sweep. I can offer read-only observations only."* An active, non-bot, non-archived repo is **not** sufficient authorization — ownership is.
@@ -54,9 +58,12 @@ fi
 Before grilling, run architecture detection to avoid prescribing the wrong work. **Prefer local git commands** (`git symbolic-ref`, `git tag`, `git log`, `ls`) — they work offline and need no auth. Use `gh api` only for signal that's genuinely remote-only (push rights, `pushed_at`, open PRs):
 
 ```bash
-# 1. Always resolve the real default branch first — never assume main/master
-DEFAULT=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#origin/##') \
-  || DEFAULT=$(gh api "repos/$OWNER/{repo}" --jq '.default_branch')
+# 1. Resolve the real default branch — never assume main/master.
+#    Try the remote's HEAD, then the API, then fall back to the current branch
+#    (covers local-only repos and clones with no remote HEAD ref set).
+DEFAULT=$(git symbolic-ref --short "refs/remotes/$REMOTE/HEAD" 2>/dev/null | sed "s#$REMOTE/##") \
+  || DEFAULT=$(gh api "repos/$OWNER/$REPO" --jq '.default_branch' 2>/dev/null) \
+  || DEFAULT=$(git branch --show-current)
 
 # 2. Check for bot-driven commit history (>80% bot commits = generated repo)
 gh api "repos/{owner}/{repo}/commits?per_page=20" --jq '.[].commit.message' \
