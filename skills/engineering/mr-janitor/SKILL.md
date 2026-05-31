@@ -23,7 +23,7 @@ Run each phase in order. Skip phases the user has already resolved.
 
 ### Phase 1 — Grill 🌸
 
-Before touching anything, invoke `/grill-me` on the user's plan. Resolve:
+Run [`/grill-me`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md) on the housekeeping plan. Decision branches to resolve:
 
 - **Branch cleanup scope** — which branches to keep (default: `main`, `develop`, `staging`, any open PRs)
 - **Versioning strategy** — existing tags? retroactive mapping? version scheme (semver-lite)?
