@@ -21,17 +21,7 @@ Lessons and decisions from the founding session (orphic-inc/stellar-api, 2026-05
 - **Annotated tags only** (`git tag -a`). Lightweight tags don't carry messages.
 - **Verify commit exists** in the target repo's object store (`git cat-file -t <hash>`) before tagging. Cross-repo hashes don't transfer without `git fetch upstream`.
 - **Duplicate tags on same commit** (e.g. `v0.4.9` and `v0.4.99`) are valid but note them as aliases in CHANGELOG.
-- **Version scheme used in this project:**
-
-| Range | Theme |
-|---|---|
-| v0.0.x | Scaffolding |
-| v0.1.x | Domain model |
-| v0.2.x | Validation + auth hardening |
-| v0.3.x | Audit phases + test foundation |
-| v0.3.9 | Feature wave complete |
-| v0.4.x | Feature expansion + data gen |
-| v0.5.x | Architecture deepening + test viability |
+- **Grill the version scheme** before applying any tags — the right milestones are project-specific. Use Phase 1 to establish them.
 
 ## CHANGELOG Format
 
@@ -49,21 +39,8 @@ Stubs worth tracking are routes/features that are:
 - But with incomplete response contracts or partial feature coverage
 - NOT broken — just incomplete
 
-File GitHub issues only with explicit user authorization. Save to memory otherwise (`project_stubs.md`).
+Good candidates: a simple resource endpoint that returns bare `{}` instead of a meaningful response, a feature with no write path yet, a model with no routes at all.
 
-Known stubs in stellar-api (as of v0.5.3):
-- **Friends** (#60) — `POST`/`PUT` return bare `{}`, one-directional add
-- **Invite Tree** (#61) — route exists, frontend wiring unverified
-- **Donations** (#62) — admin history view missing; donor perks implemented
+File GitHub issues only with explicit user authorization. Save to memory otherwise.
 
-## ADR Compliance Check
-
-Always grep for ADR-0001 violations during stub pruning:
-
-```bash
-# Named role helper functions (not local variables — those are fine)
-grep -rn "^const is[A-Z][a-zA-Z]* = async" src/routes --include="*.ts"
-```
-
-A `const isStaff = hasPermission(...)` local variable is fine.
-A `const isStaffOrModerator = async (req, res) => ...` helper function is a violation.
+**Note:** mr-janitor stub tracking is retrospective — it finds gaps in existing code. If you're starting a new feature, use [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) instead; tests should come before implementation, not after.
