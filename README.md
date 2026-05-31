@@ -1,21 +1,17 @@
 # skills
 
-A collection of Claude Code skills for AI-assisted development workflows.
+A collection of Claude Code skills for AI-assisted development workflows, forked from [mattpocock/skills](https://github.com/mattpocock/skills).
 
 ## Installing a skill
 
 Copy the skill directory into your Claude skills folder:
 
 ```bash
-cp -r mr-janitor ~/.claude/skills/
+cp -r skills/engineering/mr-janitor ~/.claude/skills/
 ```
 
 Then invoke it in Claude Code with `/mr-janitor` or by describing what you want to do.
 
-## Skills
+## Engineering skills
 
-### [mr-janitor](./mr-janitor/)
-
-Repo housekeeping — cleans merged branches, applies retroactive version tags, syncs forks, writes CHANGELOG.md, and files stub tracking issues. Grills you on strategy before touching anything. 🧹😈🤘
-
-**Invoke:** `/mr-janitor` · "janitor mode" · "sweep the repo" · "clean up branches"
+- **[mr-janitor](./skills/engineering/mr-janitor/SKILL.md)** — Repo housekeeping: clean merged branches, apply version tags, sync forks, write CHANGELOG, track stubs. Pass `--plain` for no-emoji output.
