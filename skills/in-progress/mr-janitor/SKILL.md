@@ -29,17 +29,25 @@ Run each phase in order. Skip phases the user has already resolved.
 
 ```bash
 # Resolve owner/repo from the local remote — don't assume you were handed it
-URL=$(git remote get-url origin)
-OWNER=$(printf '%s' "$URL" | sed -E 's#(git@[^:]+:|https?://[^/]+/)##; s#/?\.git$##; s#/.*##')
+URL=$(git remote get-url origin 2>/dev/null)
 
-# Do you actually have push rights?
-PUSH=$(gh api "repos/$OWNER/$(basename "$URL" .git)" --jq '.permissions.push' 2>/dev/null)
-VIEWER=$(gh api user --jq '.login' 2>/dev/null)
+if [ -z "$URL" ]; then
+  # No remote → purely local repo. It's yours by definition, but there's
+  # nowhere to push: run LOCAL-ONLY mode. Phase 2 cleans local branches,
+  # Phases 3-5 can't push (tags/CHANGELOG stay local), Phase 4 is N/A.
+  echo "no remote — LOCAL-ONLY mode (skip remote deletes, fork sync, and pushes)"
+else
+  OWNER=$(printf '%s' "$URL" | sed -E 's#(git@[^:]+:|https?://[^/]+/)##; s#/?\.git$##; s#/.*##')
+  REPO=$(basename "$URL" .git)
+  PUSH=$(gh api "repos/$OWNER/$REPO" --jq '.permissions.push' 2>/dev/null)
+  VIEWER=$(gh api user --jq '.login' 2>/dev/null)
+fi
 ```
 
-**If `push` is `false`/empty, or the owner isn't you/your org/your fork → HARD STOP.** This is a third-party clone (e.g. an upstream you track for reference). Report: *"This is a clone of `{owner}`'s repo and you don't have push rights — refusing to sweep. I can offer read-only observations only."* Do NOT proceed to branch/tag deletion. An active, non-bot, non-archived repo is **not** sufficient authorization — ownership is.
-
-If working with a fork you own, that's fine — proceed, and handle the upstream in Phase 4.
+**Decision:**
+- **No remote** → local-only mode (above). Proceed, but every remote operation is skipped.
+- **Remote exists and `push` is `false`/empty, or owner isn't you/your org/your fork → HARD STOP.** This is a third-party clone (an upstream you track for reference). Report: *"This is a clone of `{owner}`'s repo and you don't have push rights — refusing to sweep. I can offer read-only observations only."* An active, non-bot, non-archived repo is **not** sufficient authorization — ownership is.
+- **Remote exists and `push` is `true`** → proceed. If it's a fork you own, handle the upstream in Phase 4.
 
 ### Phase 1 — Grill 🌸
 
