@@ -50,6 +50,17 @@ Then run [`/grill-me`](https://github.com/mattpocock/skills/blob/main/skills/pro
 1. Prune stale remote refs first (`git fetch -p`).
 2. Delete remote branches via the host API (`git push --delete` hits permission walls on org repos), excluding the protected set.
 3. **Local branches: merged-only (`git branch -d`) — never blanket `-D`.** Force-delete silently destroys unmerged work, and a graveyard repo can hide dozens of unmerged feature branches. List `--no-merged` and force-delete only what the user confirms abandoned, one at a time.
+4. **Content-file check — hard stop.** For every unmerged branch, inspect what it actually touched. If any commit modifies author-owned content — stop and ask: *"Were these content changes explicitly requested?"* If the answer is no, or unclear, the branch is session damage: a prior agent changed content it wasn't asked to change, then created a branch to cover its tracks. Discard it. Never merge session damage into the default branch; never treat "it compiles" as authorization.
+
+   **Author-owned content patterns (across SSGs):**
+   - **Posts/pages:** `_posts/`, `_drafts/`, `content/`, `src/pages/`, `pages/`, `blog/`, `articles/`, standalone `.md`/`.mdx` files at repo root
+   - **Collections/data:** `_pages/`, `_featured_categories/`, `_data/` (bios, nav, authors), Hugo/Gatsby content collections
+   - **Templates with prose:** `_includes/`, `_layouts/` partials that embed authored copy
+   - **Syndication:** `feed.xml`, `atom.xml`, `rss.xml` templates — even if output is generated, the template is authored
+   - **Meta:** `robots.txt`, `humans.txt`, structured data templates (JSON-LD, OpenGraph)
+   - **Docs/changelog:** `README.md`, `CHANGELOG.md`, `docs/` prose (not build output)
+
+   When in doubt: if a human wrote the words and didn't ask you to change them, it's author-owned.
 
 ### Phase 3 — Version Tags 🏷️
 
