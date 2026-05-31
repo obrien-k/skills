@@ -9,6 +9,8 @@ description: Repo housekeeping skill — cleans merged branches, applies retroac
 
 Repo housekeeping. Squeaky clean. 🫧
 
+> **This skill exists because it shouldn't need to.** Versioning, branch hygiene, and changelogs should be automated and running continuously. If they are — great, skip those phases. Where Mr. Janitor shines: **end-of-sprint sweeps** to consolidate a team's disparate commits into coherent changelog entries, clean up the branch graveyard, and give the repo a consistent pulse before the next cycle starts. Also useful locally — auditing your `~/git/` directory and deciding which clones are still worth keeping around.
+
 ## Options
 
 Pass `--plain` to disable emojis and music references for professional/terse output.
@@ -23,12 +25,51 @@ Run each phase in order. Skip phases the user has already resolved.
 
 ### Phase 1 — Grill 🌸
 
+Before grilling, run architecture detection to avoid prescribing the wrong work:
+
+```bash
+# 1. Always resolve the real default branch first — never assume main/master
+DEFAULT=$(gh api repos/{owner}/{repo} --jq '.default_branch')
+
+# 2. Check for bot-driven commit history (>80% bot commits = generated repo)
+gh api "repos/{owner}/{repo}/commits?per_page=20" --jq '.[].commit.message' \
+  | grep -c "^\[bot\]\|^chore(release)\|^Merge pull request"
+
+# 3. Check for automated release tooling (language-agnostic)
+gh api repos/{owner}/{repo}/contents --jq '.[].name' \
+  | grep -E "\.releaserc|release\.config|\.goreleaser|release-please-config|\.bumpversion|RELEASING"
+# Also check: pom.xml (maven-release-plugin), Cargo.toml (cargo-release), pyproject.toml (setuptools-scm, tbump)
+
+# 4. Detect existing tag scheme — semver or something else?
+gh api repos/{owner}/{repo}/tags --paginate --jq '.[].name' | head -10
+
+# 5. Check for long-lived release branches AND fork-tracking conventions
+gh api repos/{owner}/{repo}/branches --paginate --jq '.[].name' \
+  | grep -E "^\d+\.x$|^release-\d|^upstream$|^vendor$"
+
+# 6. Maintenance mode check
+gh api repos/{owner}/{repo} --jq '.pushed_at'
+# If >12 months ago: confirm archival intent before doing anything
+```
+
+**If >80% of recent commits are bot-generated:** flag as build artifact. Ask: *"Is the real source in a separate repo? Should I look there instead?"* Skip retroactive tags and CHANGELOG.
+
+**If release tooling detected:** skip Phase 3 and Phase 5 — both automated. Tell the user.
+
+**If tags don't match `v?\d+\.\d+`:** treat as event/milestone tagging scheme. Respect it — don't overlay semver.
+
+**If long-lived release branches (`3.x`, `release-7x`) or tracking branches (`upstream`, `vendor`) detected:** add to protected list.
+
+**If last push >12 months ago:** ask whether this is an archival sweep before proceeding.
+
+The protected branch baseline is always: `{default_branch}` + `develop` + `staging` + open PR branches + any of the above.
+
 Run [`/grill-me`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md) on the housekeeping plan. Decision branches to resolve:
 
-- **Branch cleanup scope** — which branches to keep (default: `main`, `develop`, `staging`, any open PRs)
-- **Versioning strategy** — existing tags? retroactive mapping? version scheme (semver-lite)?
+- **Branch cleanup scope** — which branches to keep (default branch from API, `develop`, `staging`, release branches, any open PRs)
+- **Versioning strategy** — existing tags? scheme (semver or milestone)? automated tooling present?
 - **Fork sync** — does a personal fork need syncing? what remote is `upstream`?
-- **CHANGELOG** — new file or update existing? how granular per version?
+- **CHANGELOG** — new file or update existing? how granular per version? automated tooling present?
 - **Stub tracking** — file GitHub issues or just note in memory?
 
 ### Phase 2 — Branch Cleanup 🧹
@@ -55,17 +96,26 @@ git branch | grep -v -E "^\*|^  main$|^  develop$|^  staging$" \
 
 ### Phase 3 — Version Tags 🏷️
 
+**Detect before acting:**
+
+| Signal | Action |
+|---|---|
+| `.releaserc`, `.goreleaser.yml`, `release-please-config.json`, `Cargo.toml` + release CI | Tags are automated — skip this phase, tell the user |
+| Tags exist and are consistent | Confirm scheme, offer to catch up any gaps only |
+| No tags, no tooling, active repo | Recommend adopting tooling ([release-please](https://github.com/googleapis/release-please) is language-agnostic) rather than manual tagging |
+| No tags, no tooling, personal/archived repo | Manual retroactive tagging as last resort (below) |
+
+**Last-resort manual tagging:**
+
 ```bash
 # Apply annotated tags to specific commits
 git tag -a v0.x.y <hash> -m "v0.x.y: description"
 
-# Push to both origin and fork
+# Push tags
 git push origin --tags
-git -C /path/to/fork fetch upstream --tags
-git -C /path/to/fork push origin --tags
 ```
 
-**Key lesson:** Commits must exist in the repo's object store before tagging. Run `git fetch upstream --tags` on the fork first.
+**Key lesson:** Commits must exist in the repo's object store before tagging. Run `git fetch upstream --tags` on the fork first if working with a fork.
 
 ### Phase 4 — Fork Sync 🌿
 
@@ -95,10 +145,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/) — `Added`, `Changed`, 
 
 ### Phase 6 — Stub Tracking 🌱
 
-Find intentional stubs:
+First, check for dedicated tracking files before grepping:
 
 ```bash
-grep -rn "res\.json({})\|res\.sendStatus(501" src/routes --include="*.ts" | grep -v spec
+# Dedicated files take priority — surface these first
+ls TODO.md FIXME.md NOTES.md HACKING.md 2>/dev/null
+```
+
+Then find intentional stubs using language-agnostic markers:
+
+```bash
+# Universal: TODO/FIXME/STUB/HACK comments and not-implemented throws
+grep -rn "TODO\|FIXME\|STUB\|HACK\|NOT IMPLEMENTED\|raise NotImplementedError\|todo!()\|unimplemented!()\|throw new Error.*not implemented" \
+  --exclude-dir="{node_modules,.git,vendor,dist,build,__pycache__}" \
+  --exclude="*.lock" .
+
+# HTTP-level stubs (language-agnostic: 501 status = not implemented)
+grep -rn "501\|NotImplemented" . \
+  --exclude-dir="{node_modules,.git,vendor,dist}" \
+  --exclude="*.lock"
 ```
 
 For each stub: note the last commit, current behavior, and what's missing. File a GitHub issue only if the user confirms — don't publish without authorization.
