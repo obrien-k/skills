@@ -14,4 +14,4 @@ Then invoke it in Claude Code with `/mr-janitor` or by describing what you want 
 
 ## Engineering skills
 
-- **[mr-janitor](./skills/engineering/mr-janitor/SKILL.md)** — Repo housekeeping: clean merged branches, apply version tags, sync forks, write CHANGELOG, track stubs. Pass `--plain` for no-emoji output.
+- **[mr-janitor](./skills/in-progress/mr-janitor/SKILL.md)** — Repo housekeeping: clean merged branches, apply version tags, sync forks, write CHANGELOG, track stubs. Pass `--plain` for no-emoji output.
