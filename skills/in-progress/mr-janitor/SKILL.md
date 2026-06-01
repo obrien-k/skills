@@ -23,6 +23,8 @@ Emojis on, music-infused, decisive. Grill before executing — nothing destructi
 
 These are principles, not a script. Resolve the actual remote name, host, and branch from the repo in front of you — don't assume `origin`, GitHub, or `main`. Run phases in order; skip what the user has resolved. Detailed recipes and the lessons behind each rule live in [REFERENCE.md](REFERENCE.md).
 
+**Pre-commit gate (every phase that commits).** Before staging anything for a commit — CHANGELOG, content, or otherwise — run the repo's format, lint, and test scripts and confirm they pass on the changed files. Discover them from the repo (`package.json` scripts, `Makefile`, `CONTRIBUTING`, an `AGENTS.md` commit-workflow section); a clean tree from a prior phase is not proof the tooling passes. Format before lint (formatter violations surface as lint errors), lint before type-check/tests. A commit Mr. Janitor makes should clear the same bar a human's would — never commit red.
+
 ### Phase 0 — Ownership Gate 🚦 (hard stop)
 
 Confirm you're allowed to touch this repo before anything destructive — the worst failure is sweeping a repo you don't control.
@@ -49,8 +51,9 @@ Then run [`/grill-me`](https://github.com/mattpocock/skills/blob/main/skills/pro
 
 1. Prune stale remote refs first (`git fetch -p`).
 2. Delete remote branches via the host API (`git push --delete` hits permission walls on org repos), excluding the protected set.
-3. **Local branches: merged-only (`git branch -d`) — never blanket `-D`.** Force-delete silently destroys unmerged work, and a graveyard repo can hide dozens of unmerged feature branches. List `--no-merged` and force-delete only what the user confirms abandoned, one at a time.
-4. **Content-file check — hard stop.** For every unmerged branch, inspect what it actually touched. If any commit modifies author-owned content — stop and ask: *"Were these content changes explicitly requested?"* If the answer is no, or unclear, the branch is session damage: a prior agent changed content it wasn't asked to change, then created a branch to cover its tracks. Discard it. Never merge session damage into the default branch; never treat "it compiles" as authorization.
+3. **Dependabot pruning — all or nothing.** If the repo has dependabot branches, close ALL open dependabot PRs and delete ALL their branches in the same sweep. Leaving even one active branch signals Dependabot the integration is live and it will resume filing updates within days — undoing the cleanup. Use `gh pr close --delete-branch` to handle both in one step. `gh pr list` paginates at 30 by default; always pass `--paginate` or do a second pass to catch stragglers. Bot PRs from external forks (branch lives on the fork, not origin) can be closed but their branch can't be deleted from upstream — that's expected, not an error.
+4. **Local branches: merged-only (`git branch -d`) — never blanket `-D`.** Force-delete silently destroys unmerged work, and a graveyard repo can hide dozens of unmerged feature branches. List `--no-merged` and force-delete only what the user confirms abandoned, one at a time.
+5. **Content-file check — hard stop.** For every unmerged branch, inspect what it actually touched. If any commit modifies author-owned content — stop and ask: *"Were these content changes explicitly requested?"* If the answer is no, or unclear, the branch is session damage: a prior agent changed content it wasn't asked to change, then created a branch to cover its tracks. Discard it. Never merge session damage into the default branch; never treat "it compiles" as authorization.
 
    **Author-owned content patterns (across SSGs):**
    - **Posts/pages:** `_posts/`, `_drafts/`, `content/`, `src/pages/`, `pages/`, `blog/`, `articles/`, standalone `.md`/`.mdx` files at repo root
@@ -74,6 +77,8 @@ Detect before acting:
 | No tags, no tooling, personal/archived repo | Manual retroactive annotated tags as last resort |
 
 Manual tagging is the last resort only — annotated tags (`git tag -a`), then push. Commits must already exist in the object store (fetch from the fork's upstream first if cross-repo).
+
+**Manifest version drift check.** Before tagging, read the committed version manifest (`package.json` `version`, `pyproject.toml`, `Cargo.toml`, `*.csproj`, etc.) and compare it to the tag you're about to cut. If the manifest lags the tag scheme (e.g. manifest says `0.5.0` but tags run through `v0.5.3`), flag it. Don't rewrite history to fix past drift — from the point you notice it, bump the manifest to match the version being tagged as part of the same release commit, so the committed index and the tag agree going forward.
 
 ### Phase 4 — Fork Sync 🌿
 
