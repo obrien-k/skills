@@ -9,6 +9,8 @@ description: Fun/troll status strip above the user input during long model waits
 
 A status strip rendered above the text input whenever a response is taking a while. One item, held for the full wait. Escalates tier by elapsed time; token load at send time can bias the starting tier upward.
 
+> **Note:** this is pure **window-decoration** — a fun bit of chrome to watch while you wait. It changes nothing about the request, the model, or the result; pull it and the agent behaves identically.
+
 ## Timing Tiers
 
 | Elapsed    | Tier        | Vibe                        |
@@ -106,3 +108,4 @@ pi.on("before_provider_request", (event, ctx) => {
 - [x] FUCKINDOITLIVE.gif URL
 - [x] Large-context token threshold for tier-bias — fill-ratio table above; 60 min+ aliases to highest tier
 - [x] More corpus items (user retrieving from /btw notes) — none found, moving on
+- [ ] Verify OSC 8 hyperlink rendering end-to-end — Pi's render path first, then any other TUI it might run under (Antigravity, or "Elliot" 😉). Confirm the escapes aren't stripped or mis-width-counted, and keep the bare-URL fallback wired for terminals that don't support OSC 8.
