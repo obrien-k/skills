@@ -27,11 +27,11 @@ A status strip rendered above the text input whenever a response is taking a whi
 The strip renders on Pi's **footer status line** via `ctx.ui.setStatus(key, text)` — a
 plain styled string keyed by the extension, **not** a markdown surface. There's no
 markdown pass: `[text](url)` would print literally. Styling is done with theme escapes
-(`theme.fg("accent", "⭐")`, `theme.fg("dim", …)`), so links are emitted at the terminal
+(`theme.fg("accent", …)`, `theme.fg("dim", …)`), so links are emitted at the terminal
 layer, not via markdown.
 
 ```
-⭐ [label] ↗
+[label] ↗
 > user input █
 ```
 
@@ -55,9 +55,10 @@ URL never shows). Wrap the label in an OSC 8 terminal hyperlink, using the **BEL
   (iTerm2 3.6.8) supports it.
 - **Still keep the bare-`{url}` fallback** for OSC 8-blind terminals — most ⌘-click-linkify
   a plain URL anyway. Antigravity / other host TUIs remain untested; the fallback covers them.
-- Never inject the skill's own name into a strip: **"verbiagating" (or any similar
-  verbiage) must not appear in any strip message.** It's the internal name of the
-  feature, nothing more.
+- Never inject the skill's own name into a **wait** strip: **"verbiagating" (or any
+  similar verbiage) must not appear in any tiered wait message.** It's the internal name
+  of the feature, nothing more. **One sanctioned exception:** the post-turn *closeout*
+  line is exactly `verbiagated for <Mm Ss>` — the name's only permitted appearance.
 
 ## Portable Rendering
 
@@ -65,7 +66,7 @@ The renderer must stay **host-agnostic** so the strip is at least *statically vi
 in another TUI or skill — not every host has Pi's OSC-aware width/truncation, and a
 host that miscounts an embedded escape can break its own layout. So:
 
-- **`plain` is the default, universal mode** — escape-free `⭐ {label} — {url}`. Safe in
+- **`plain` is the default, universal mode** — escape-free `{label} — {url}`. Safe in
   any TUI, any skill, any terminal; nothing to detect, nothing to strip. This is the
   "statically viable" floor.
 - **`osc8` is opt-in**, enabled only on a host verified OSC-aware (Pi ✓, iTerm2 ✓). The
@@ -84,10 +85,10 @@ type LinkMode = "plain" | "osc8";
 const osc8 = (url: string, label: string) => `\x1b]8;;${url}\x07${label}\x1b]8;;\x07`;
 
 export function renderStrip(item: Item, mode: LinkMode = "plain"): string {
-  if (!item.url) return `⭐ ${item.label}`;
+  if (!item.url) return item.label;
   return mode === "osc8"
-    ? `⭐ ${osc8(item.url, item.label)} ↗`   // clickable label, verified hosts only
-    : `⭐ ${item.label} — ${item.url}`;        // static fallback, viable anywhere
+    ? `${osc8(item.url, item.label)} ↗`   // clickable label, verified hosts only
+    : `${item.label} — ${item.url}`;        // static fallback, viable anywhere
 }
 ```
 
@@ -152,11 +153,54 @@ pi.on("turn_end", (_event, ctx) => {
 - `getContextUsage()` can be null post-compaction — guard with `?? 0`.
 - Corpus lives inline in the extension (`index.ts` `CORPUS` record); one item picked per tier, held until the next tier fires or `turn_end` clears it.
 
-## Open / TBD
+## Claude Code Adapter
 
-- [x] What does "verbiagating" mean as a concept — **internal name only**; never shown in a strip. Labels come from the corpus backtick text + arrow + URL.
-- [x] Breakdancing GIF URL
-- [x] FUCKINDOITLIVE.gif URL
-- [x] Large-context token threshold for tier-bias — fill-ratio table above; 60 min+ aliases to highest tier
-- [x] More corpus items (user retrieving from /btw notes) — none found, moving on
-- [x] Verify OSC 8 hyperlink rendering end-to-end — **PASS on Pi** (`pi-coding-agent` 0.78): footer doesn't `stripAnsi`, `pi-tui` `visibleWidth` treats OSC as zero-width, `truncateToWidth` is hyperlink-aware, and Pi's own login dialog uses the BEL form. iTerm2 3.6.8 ✓. Bare-URL fallback kept wired. **Untested:** Antigravity / other host TUIs (fallback covers).
+A working host adapter ships in [`scripts/`](scripts/), driven entirely by Claude Code's
+documented [statusLine](https://code.claude.com/docs/en/statusline) + hooks surface — no
+forked client. The strip renders as a **second status-line row**; the user's own statusLine
+is preserved and chained, never clobbered.
+
+| Pi event | Claude Code mechanism | Role |
+|---|---|---|
+| `before_provider_request` | `UserPromptSubmit` hook (`turn-start.sh`) | stamp turn-start epoch under `$TMPDIR/verbiagating/<session_id>` |
+| tier timers + `setStatus` | `statusLine` cmd (`statusline.sh`), `refreshInterval: 2` | re-runs every 2 s, reads elapsed + context %, renders the strip row |
+| `turn_end` | `Stop` hook (`turn-end.sh`) | delete the stamp → strip dismisses on next refresh |
+
+**Why `refreshInterval`.** Event-driven statusLine updates go quiet during the pre-token
+wait; `refreshInterval` (min 1 s) re-runs the command on a fixed timer regardless, which is
+what lets the tier escalate *while you wait* rather than only after the response lands.
+
+**Signals come free in the statusLine stdin JSON** — no transcript parsing:
+- `context_window.used_percentage` → the token-load bias table directly.
+- `effort.level` (`low…max`) and `thinking.enabled` are available as extra difficulty
+  signals if the bias logic is ever extended.
+- `session_id` keys the per-session state file (stable across refreshes, unique per session
+  — the docs' recommended key; never `$$`).
+
+**Scripts** (`scripts/`, also the install payload):
+- `corpus.tsv` — `tier⇥label⇥url` data, the one file to edit to change messages.
+- `statusline.sh` — host-agnostic core (`select_tier`, `render_strip` — a faithful bash
+  port of the TS `renderStrip` above) plus the Claude glue (JSON parse, state, base chain).
+  Pick is `cksum(session:tier:turn_start) % n` — stable within a turn, fresh next turn, zero
+  extra writes from the hot path.
+- `turn-start.sh` / `turn-end.sh` — the two hooks. Both silent (UserPromptSubmit stdout is
+  injected as context, so it must print nothing).
+
+**Install** (global, `~/.claude`):
+1. Copy `scripts/*` → `~/.claude/verbiagating/`, `chmod +x *.sh`.
+2. Save the current `statusLine.command` verbatim → `~/.claude/verbiagating/base-statusline.cmd`
+   (the wrapper `eval`s it and re-feeds stdin, so the existing line keeps working).
+3. `jq`-merge into `~/.claude/settings.json`: point `statusLine.command` at
+   `statusline.sh`, set `statusLine.refreshInterval: 2`, append the `UserPromptSubmit` and
+   `Stop` hooks. Back up settings first; never overwrite sibling keys.
+4. Mode: write `plain` (default) or `osc8` to `~/.claude/verbiagating/mode`.
+5. **Restart Claude Code** — hook changes don't apply mid-session, and the statusLine
+   command needs a workspace-trust accept on first run.
+
+**Uninstall.** Restore `statusLine.command` from `base-statusline.cmd`, drop the
+`refreshInterval` and the two hook entries, `rm -rf ~/.claude/verbiagating`. A
+`settings.json.bak.verbiagating` backup is written at install time.
+
+**Cost note.** `refreshInterval: 2` re-runs the *whole* chained statusLine (incl. the base's
+git calls) every 2 s even when idle — Claude Code can't refresh one row in isolation. Bump
+the interval or cache the base if that matters.
