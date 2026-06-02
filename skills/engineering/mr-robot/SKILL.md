@@ -72,6 +72,12 @@ Then run [`/grill-me`](https://github.com/mattpocock/skills/blob/main/skills/pro
 
    When in doubt: if a human wrote the words and didn't ask you to change them, it's author-owned.
 
+6. **OS/editor cruft — sweep + ignore, never commit.** Working trees accumulate machine-local junk: `.DS_Store` (macOS), `Thumbs.db`/`desktop.ini` (Windows), `*.swp`/`*~` (vim/emacs), `.idea/` & per-user `.vscode/`. Sweep it, but stay surgical:
+   - Delete only **untracked** cruft (`find <repo> -name .DS_Store -not -path '*/.git/*' -not -path '*/node_modules/*' -delete`); never delete tracked content, and verify nothing matches `git ls-files` before deleting.
+   - If a cruft file is already **tracked** (slipped in before any ignore existed), `git rm --cached` it as part of a deliberate commit — don't leave a half-ignored file that's both tracked and ignored.
+   - Prevent recurrence in the right place: for personal-machine OS cruft, prefer the user's **global** ignore (`core.excludesfile`, defaulting to `~/.config/git/ignore`) so every repo is covered without polluting each repo's `.gitignore`. Only add to a repo's own `.gitignore` when that's already the team convention there (and remember it's a committed change — branch/PR on protected repos).
+   - Lesson: `.DS_Store` regenerates the instant Finder touches a folder — deleting without a global ignore is a treadmill. Ignore first, then sweep. Sweep the whole repo set in one pass (paired API/UI clones both collect it).
+
 ### Phase 3 — Version Tags 🏷️
 
 Detect before acting:
