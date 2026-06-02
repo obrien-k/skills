@@ -17,3 +17,7 @@ Then invoke it in Claude Code with `/mr-robot` or by describing what you want to
 🎉🤖 **First official release — meet Mr. Robot.** Graduated off the in-progress bench into `engineering/`.
 
 - **[mr-robot](./skills/engineering/mr-robot/SKILL.md)** — Repo housekeeping SysOp: clean merged branches, apply version tags, sync forks, write CHANGELOG, track stubs. Pass `--plain` for no-emoji output.
+
+## Misc skills
+
+- **[verbiagating](./skills/misc/verbiagating/SKILL.md)** — Fun/troll status strip above the input during long model waits. Escalates from cute to chaotic by elapsed time. Part of claudx-pi.
