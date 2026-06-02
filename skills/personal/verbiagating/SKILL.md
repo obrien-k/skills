@@ -59,6 +59,41 @@ URL never shows). Wrap the label in an OSC 8 terminal hyperlink, using the **BEL
   verbiage) must not appear in any strip message.** It's the internal name of the
   feature, nothing more.
 
+## Portable Rendering
+
+The renderer must stay **host-agnostic** so the strip is at least *statically viable*
+in another TUI or skill — not every host has Pi's OSC-aware width/truncation, and a
+host that miscounts an embedded escape can break its own layout. So:
+
+- **`plain` is the default, universal mode** — escape-free `⭐ {label} — {url}`. Safe in
+  any TUI, any skill, any terminal; nothing to detect, nothing to strip. This is the
+  "statically viable" floor.
+- **`osc8` is opt-in**, enabled only on a host verified OSC-aware (Pi ✓, iTerm2 ✓). The
+  choice is **static** — a config flag or one-time capability check, never per-render
+  guessing.
+
+The renderer is a pure function with **no host imports** (no Pi `ctx`/`theme`); the only
+glue a host supplies is a one-line string sink (Pi: `setStatus`; another TUI: its
+status/footer API; a plain skill: print a line):
+
+```ts
+type Item = { label: string; url?: string };
+type LinkMode = "plain" | "osc8";
+
+// BEL-terminated OSC 8 — widest terminal support.
+const osc8 = (url: string, label: string) => `\x1b]8;;${url}\x07${label}\x1b]8;;\x07`;
+
+export function renderStrip(item: Item, mode: LinkMode = "plain"): string {
+  if (!item.url) return `⭐ ${item.label}`;
+  return mode === "osc8"
+    ? `⭐ ${osc8(item.url, item.label)} ↗`   // clickable label, verified hosts only
+    : `⭐ ${item.label} — ${item.url}`;        // static fallback, viable anywhere
+}
+```
+
+Styling (Pi's `theme.fg(...)`) is layered by the host *around* this output, never baked
+into it — that keeps the core string portable.
+
 ## Corpus
 
 ### Light — 30–99 sec
