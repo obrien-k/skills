@@ -29,7 +29,7 @@ A status strip rendered above the text input whenever a response is taking a whi
 
 ### Light — 30–99 sec
 - `💃Breakdancing🕺` → [*(URL TBD)*](https://www.youtube.com/watch?v=Hr95rKEYT5E)
-- `Bump a bitch.. just kiddin` — playwright vibes: click a button, nudge the mouse, tab through, check screen reader
+- `💅Bump a bitch.. just kiddin🖕` — playwright vibes: click a button, nudge the mouse, tab through, check screen reader
 
 ### Medium — 1–10 min
 - `⚡It's Pikachu!` → https://www.youtube.com/watch?v=5QzEoWeybp4
