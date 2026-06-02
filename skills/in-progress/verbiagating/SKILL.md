@@ -36,7 +36,7 @@ A status strip rendered above the text input whenever a response is taking a whi
 - `soh-ho-kay-her'rs-thee-earth'-szjhst-chillin 🌏🌎💥🌍 .!Damn!🌏🌎💥` → https://www.youtube.com/watch?v=nZMwKPmsbWE
 
 ### The Sweet Spot - 6 - 7 min
-- `Conversion, softtware version 🥁 \n
+- `Conversion, softtware version 🥁
   7.0` → https://www.youtube.com/watch?v=iywaBOMvYLI&list=RDiywaBOMvYLI&start_radio=1
 
 ### Heavy — 10 min+
