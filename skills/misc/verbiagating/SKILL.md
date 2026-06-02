@@ -133,6 +133,47 @@ tiers can carry a version alias (the `7.0` drop). Extend that — any wait that
 crosses **60 min** is aliased straight to the highest tier (heavy/max), regardless
 of token fill. Long-haul waits get the loudest drop, no ramp.
 
+## Overrides
+
+Three signals can pre-empt the tier-selected item during an active wait. All
+**pierce the silent floor** (they can show before the 30s mark), and precedence
+runs **phrase-pin > 69 > HADOUKEN (~50%) > tiered item**.
+
+### Phrase-pin (`phrases.tsv`)
+
+Key phrases in the *prompt* pin a specific drop for that one turn — the
+runtime-level analogue of the token-load bias, but content-addressed instead of
+time-addressed. `turn-start.sh` lowercases the prompt and pins the first
+`phrases.tsv` row whose `phrase` is a substring, writing `<label>\t<url>` to
+`$TMPDIR/verbiagating/<sid>.pin`; `statusline.sh` renders it over the tier pick
+for the whole wait; `turn-end.sh` clears it (per-turn). Data shape mirrors
+`corpus.tsv` — `phrase⇥label⇥url`, `url` optional, `#`/blank lines ignored:
+
+```
+hadouken	🔥🌀 HADOUKEN	https://www.youtube.com/watch?v=Hr95rKEYT5E
+```
+
+This is also the answer to "why invoke `/verbiagating` each session?" — you
+don't. The runtime is the three always-on hooks; the slash command only loads
+this doc. Phrase-pins are how a *phrase* (not a manual invocation) tunes the
+strip's level.
+
+### The 69
+
+When `context_window.total_output_tokens` of the most recent response lands on
+exactly `69` (the `NICE_TOKENS` constant in `statusline.sh`), the strip shows a
+bare `Nice.` — no url, no other context. `total_output_tokens` is the peg
+because short replies occasionally hit 69 for real, so it fires as a rare
+coincidence rather than never. Retarget by changing the one constant.
+
+### HADOUKEN (`KEN_*`)
+
+Codename HADOUKEN, realized as Ken's combo: at the middling **~50% context**
+mark (`KEN_PCT`, the comme-ci-comme-ça halfway slog) the strip shows
+`👊Ken combo-ing.⚔️` linked to the Ken Combo gif. Context-addressed, not a time
+tier — it replaced the original 120–150s time-band idea. Label/url/mark are the
+`KEN_LABEL` / `KEN_URL` / `KEN_PCT` constants in `statusline.sh`.
+
 ## Pi Wiring
 
 ```ts
