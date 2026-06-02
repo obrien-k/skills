@@ -24,10 +24,11 @@ A status strip rendered above the text input whenever a response is taking a whi
 
 ## Strip Format
 
-The strip is a Pi **above-editor widget** (`ctx.ui.custom((tui, theme, kb, done) => …)`
-— the same slot `plan-mode` drives), **not** a markdown surface. There's no markdown
-pass: `[text](url)` would print literally. The widget's `render` fn emits styled text
-directly, so links are done at the terminal layer, not via markdown.
+The strip renders on Pi's **footer status line** via `ctx.ui.setStatus(key, text)` — a
+plain styled string keyed by the extension, **not** a markdown surface. There's no
+markdown pass: `[text](url)` would print literally. Styling is done with theme escapes
+(`theme.fg("accent", "⭐")`, `theme.fg("dim", …)`), so links are emitted at the terminal
+layer, not via markdown.
 
 ```
 ⭐ [label] ↗
@@ -36,17 +37,24 @@ directly, so links are done at the terminal layer, not via markdown.
 
 The `[label]` is pulled **directly** from the corpus item — the backtick-wrapped text
 — and the label itself is the **clickable link** (the `↗` is the affordance; the raw
-URL never shows). Wrap the label in an OSC 8 terminal hyperlink:
+URL never shows). Wrap the label in an OSC 8 terminal hyperlink, using the **BEL
+(`\x07`) terminator** to match Pi's own convention:
 
 ```
-ESC ]8;;{url} ESC \  {label}  ESC ]8;;ESC \
-\x1b]8;;{url}\x1b\\{label}\x1b]8;;\x1b\\
+\x1b]8;;{url}\x07{label}\x1b]8;;\x07
 ```
 
-- Works in OSC 8-aware terminals (iTerm2, kitty, WezTerm, recent VTE). **Verify
-  against Pi's actual render path before shipping** — some TUI renderers miscount
-  display width on embedded escapes or strip them. If Pi does, fall back to printing
-  the bare `{url}` after the label; most terminals ⌘-click-linkify a plain URL anyway.
+**Verified against Pi's render path** (`pi-coding-agent` 0.78 + bundled `pi-tui`):
+- The footer only runs `sanitizeStatusText` (collapses `\r\n\t`) before `truncateToWidth`
+  — it does **not** `stripAnsi` the rendered text, so the OSC 8 escapes survive.
+- `pi-tui`'s `visibleWidth` strips OSC sequences before counting, so the URL bytes are
+  **zero-width** — no layout/alignment breakage.
+- `truncateToWidth` is hyperlink-aware (closes and re-opens an active OSC 8 link across a
+  cut), so a long URL can't get shredded mid-sequence.
+- Pi itself ships OSC 8 in its login dialog with the same BEL form. Current terminal
+  (iTerm2 3.6.8) supports it.
+- **Still keep the bare-`{url}` fallback** for OSC 8-blind terminals — most ⌘-click-linkify
+  a plain URL anyway. Antigravity / other host TUIs remain untested; the fallback covers them.
 - Never inject the skill's own name into a strip: **"verbiagating" (or any similar
   verbiage) must not appear in any strip message.** It's the internal name of the
   feature, nothing more.
@@ -71,9 +79,9 @@ ESC ]8;;{url} ESC \  {label}  ESC ]8;;ESC \
 
 ## Token Load Bias
 
-At send time, snapshot `ctx.getContextUsage().tokens` and divide by the window
-max to get a fill ratio. Big context = the wait is likely to be long, so open
-higher up the ladder instead of starting cute:
+At send time, read `ctx.getContextUsage().percent` (the same fill ratio the footer
+shows). Big context = the wait is likely to be long, so open higher up the ladder
+instead of starting cute:
 
 | Context fill        | Starting tier at first non-silent mark |
 |---------------------|----------------------------------------|
@@ -92,15 +100,22 @@ of token fill. Long-haul waits get the loudest drop, no ramp.
 ## Pi Wiring
 
 ```ts
-pi.on("before_provider_request", (event, ctx) => {
-  const usage = ctx.getContextUsage();
-  // snapshot tokens → store for tier bias
+pi.on("before_provider_request", (_event, ctx) => {
+  clearTimers();
+  ctx.ui.setStatus(STATUS_KEY, "");           // clear stale strip
+  const highContext = (ctx.getContextUsage()?.percent ?? 0) > 50;
+  // schedule tier timers (light/medium/heavy), biased by highContext
+});
+
+pi.on("turn_end", (_event, ctx) => {
+  clearTimers();
+  ctx.ui.setStatus(STATUS_KEY, "");           // dismiss on response
 });
 ```
 
-- `estimateContextTokens(messages[])` as fallback if `getContextUsage()` returns null post-compaction
-- Corpus lives in `.pi/skills/verbiagating.md` (skill file with YAML frontmatter `items[]`)
-- One item picked per send; dismissed on response
+- Each tier timer fires `ctx.ui.setStatus(STATUS_KEY, renderItem(pick(CORPUS[tier]), ctx))`.
+- `getContextUsage()` can be null post-compaction — guard with `?? 0`.
+- Corpus lives inline in the extension (`index.ts` `CORPUS` record); one item picked per tier, held until the next tier fires or `turn_end` clears it.
 
 ## Open / TBD
 
@@ -109,4 +124,4 @@ pi.on("before_provider_request", (event, ctx) => {
 - [x] FUCKINDOITLIVE.gif URL
 - [x] Large-context token threshold for tier-bias — fill-ratio table above; 60 min+ aliases to highest tier
 - [x] More corpus items (user retrieving from /btw notes) — none found, moving on
-- [ ] Verify OSC 8 hyperlink rendering end-to-end — Pi's render path first, then any other TUI it might run under (Antigravity, or "Elliot" 😉). Confirm the escapes aren't stripped or mis-width-counted, and keep the bare-URL fallback wired for terminals that don't support OSC 8.
+- [x] Verify OSC 8 hyperlink rendering end-to-end — **PASS on Pi** (`pi-coding-agent` 0.78): footer doesn't `stripAnsi`, `pi-tui` `visibleWidth` treats OSC as zero-width, `truncateToWidth` is hyperlink-aware, and Pi's own login dialog uses the BEL form. iTerm2 3.6.8 ✓. Bare-URL fallback kept wired. **Untested:** Antigravity / other host TUIs (fallback covers).
