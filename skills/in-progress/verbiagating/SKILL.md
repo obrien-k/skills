@@ -36,12 +36,12 @@ A status strip rendered above the text input whenever a response is taking a whi
 - `soh-ho-kay-her'rs-thee-earth'-szjhst-chillin 🌏🌎💥🌍 .!Damn!🌏🌎💥` → https://www.youtube.com/watch?v=nZMwKPmsbWE
 
 ### The Sweet Spot - 6 - 7 min
-- `Conversion, softtware version 🥁
+- `Conversion, softtware version 🥁\n
   7.0` → https://www.youtube.com/watch?v=iywaBOMvYLI&list=RDiywaBOMvYLI&start_radio=1
 
 ### Heavy — 10 min+
 - `We're no strangers to love..` → https://www.youtube.com/watch?v=eBGIQ7ZuuiU
--`🧌FUCKINDOITLIVE.gif👹`  → https://www.youtube.com/watch?v=Qy-Y3HJNU_s
+- `🧌FUCKINDOITLIVE.gif👹`  → https://www.youtube.com/watch?v=Qy-Y3HJNU_s
 
 ## Token Load Bias
 
