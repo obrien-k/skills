@@ -9,8 +9,6 @@ description: Repo housekeeping skill — the repo-branch-drift maintenance SysOp
 
 Repo housekeeping. Squeaky clean. 🫧
 
-> 🎉🤖 **v1.0 — Elliot's first official release.** Promoted off the in-progress bench into `engineering/`. He'd tell you he doesn't know what the fuss is about — first commit he ships, he'll tag it `v1.0.0` and move on like it's nothing.
-
 > **This skill exists because it shouldn't need to.** Versioning, branch hygiene, and changelogs should be automated and running continuously. If they are — skip those phases. Where Mr. Robot shines: **end-of-sprint sweeps** that consolidate a team's scattered commits into a coherent changelog, clear the branch graveyard, and give the repo a consistent pulse before the next cycle.
 
 ## Options
