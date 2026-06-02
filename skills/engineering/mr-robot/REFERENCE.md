@@ -1,4 +1,4 @@
-# Mr. Janitor — Reference
+# Mr. Robot — Reference
 
 Command recipes and the lessons behind each rule. SKILL.md carries the principles; this file carries the concrete commands and the gotchas that produced them.
 
