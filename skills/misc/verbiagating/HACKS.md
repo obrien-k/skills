@@ -19,7 +19,9 @@ session fixes layered on top.
     became per-response in Claude Code v2.1.132 (cumulative before), so the exact peg was
     dead on older clients and a one-in-a-million graze on newer ones; a 69k *output* band
     would overshoot most models' max-output cap. Input tokens trip once as context crosses 69k.
-  - `KEN_*` comments + the precedence comment de-HADOUKEN'd to "Ken (~50%)".
+  - `KEN_*` comments + the precedence comment de-HADOUKEN'd to "Ken (~50%)";
+    `KEN_URL` points at the direct GIF (`ssb.wiki.gallery/.../Kencombo.gif`) instead
+    of the shipping wiki-page link.
   - Keeps upstream's trailing `|| true`.
 - **`turn-start.sh`** — stale-marker GC (`find … -mtime +1 -delete`) so dead sessions don't
   litter `$TMPDIR/verbiagating`.
@@ -27,11 +29,9 @@ session fixes layered on top.
 - **`phrases.tsv`** — unchanged. Note: the `hadouken` URL is a pending hand-edit to
   `https://www.youtube.com/watch?v=Hr95rKEYT5E` (the value `gallery.sh`'s pin already uses).
 
-> Also drafted in that session, but **out of scope** here (script-focused sandbox): a
-> *Simulacra / generic-agent profile* — a paste-in prompt payload that mimics the strip in a
-> runtime-less agent (ChatGPT/Custom GPT), keyed on the agent's own answer length, plus a
-> three-profile (Pi / Claude Code / Simulacra) framing. It lives in the transcript; ask to
-> revive it.
+> The *Simulacra / generic-agent profile* — a paste-in prompt payload that mimics the strip in
+> a runtime-less agent (ChatGPT/Custom GPT), keyed on the agent's own answer length — now lives
+> in [SIMULACRA.md](SIMULACRA.md). (It shares the Ken-combo GIF used by `KEN_URL` above.)
 
 ---
 
@@ -132,7 +132,7 @@ NICE_LO=69000; NICE_HI=69999   # the "nice" band — retarget by moving these tw
 # ça, the halfway slog), not a time band. Context-addressed, no specific tier.
 KEN_PCT=50
 KEN_LABEL='👊Ken combo-ing.⚔️'
-KEN_URL='https://www.ssbwiki.com/Ken_Combo#/media/File:Kencombo.gif'
+KEN_URL='https://ssb.wiki.gallery/images/8/87/Kencombo.gif'
 
 # 3. Elapsed since turn start (UserPromptSubmit hook wrote the epoch).
 elapsed=-1
