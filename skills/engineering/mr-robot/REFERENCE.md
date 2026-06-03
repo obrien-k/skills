@@ -52,6 +52,23 @@ git log -1 --format=%cr
 - **Protected branch set** = `$DEFAULT` + `develop` + `staging` + open-PR branches + long-lived release branches (`3.x`, `release-7x`) + tracking branches (`upstream`, `vendor`). Build this once; every deletion phase excludes it.
 - Don't overlay semver on a milestone/build tag scheme — it's correct for embedded/hardware/event repos.
 
+### Merge style + linear-history 🔀
+
+If MCP tools are available, query repo settings directly — prefer whichever access is live in the session over shelling out.
+
+```bash
+gh api repos/{owner}/{repo} \
+  --jq '{merge: .allow_merge_commit, squash: .allow_squash_merge, rebase: .allow_rebase_merge}'
+# required_linear_history on default branch protection
+gh api repos/{owner}/{repo}/branches/{default}/protection \
+  --jq '.required_linear_history.enabled' 2>/dev/null
+```
+
+**This dictates the entire branch-cleanup shape.** A **rebase-only / linear-history** repo cannot absorb a branch that contains merge commits — the rebase can't replay them, so the PR silently won't merge (it sits OPEN, base unchanged, often misread as a flaky button or a permissions issue). On such repos:
+- Keep every branch destined for the default branch **linear** (no `Merge branch ...` commits)
+- When a branch already has merge commits baked in, don't fix it in place — cut a fresh branch off the target and replay the *content* (squash-merge locally or cherry-pick the non-merge commits), then open the PR from that clean branch
+- Squash-only and merge-commit-only repos have their own constraints; match the repo
+
 ## Phase 2 — Branch Cleanup
 
 ```bash
@@ -70,6 +87,30 @@ git branch --no-merged   # list these; force-delete only what the user confirms,
 - **Never blanket `git branch -D`.** A graveyard repo hides unmerged work — one test repo had 56 unmerged feature branches that `-D` would have erased.
 - `git branch --merged` with no ref checks against *current HEAD*, not `$DEFAULT` — always pass `$DEFAULT` explicitly.
 - Check open PRs before deleting: `gh pr list --state open --json headRefName`.
+
+### Author-owned content patterns ✍️
+
+- **Posts/pages:** `_posts/`, `_drafts/`, `content/`, `src/pages/`, `pages/`, `blog/`, `articles/`, standalone `.md`/`.mdx` files at repo root
+- **Collections/data:** `_pages/`, `_featured_categories/`, `_data/` (bios, nav, authors), Hugo/Gatsby content collections
+- **Templates with prose:** `_includes/`, `_layouts/` partials that embed authored copy
+- **Syndication:** `feed.xml`, `atom.xml`, `rss.xml` templates — even if output is generated, the template is authored
+- **Meta:** `robots.txt`, `humans.txt`, structured data templates (JSON-LD, OpenGraph)
+- **Docs/changelog:** `README.md`, `CHANGELOG.md`, `docs/` prose (not build output)
+
+### OS/editor cruft recipes 🧹
+
+```bash
+# Delete untracked OS/editor junk only — never touch tracked files
+find <repo> -name .DS_Store -not -path '*/.git/*' -not -path '*/node_modules/*' -delete
+# Verify nothing is tracked before deleting
+git ls-files | grep -E '\.DS_Store|Thumbs\.db|\.swp$|\.idea'
+# If already tracked — unstage from git index
+git rm --cached <file>
+```
+
+- Prefer **global ignore** (`core.excludesfile`, `~/.config/git/ignore`) for personal OS cruft — covers every repo without polluting `.gitignore`
+- Only add to repo `.gitignore` when that's the team convention (committed change — branch/PR on protected repos)
+- `.DS_Store` regenerates the instant Finder touches a folder — ignore *first*, then sweep; do both repos in one pass (API + UI clone both collect it)
 
 ## Phase 3 — Version Tagging
 
