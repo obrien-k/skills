@@ -97,6 +97,27 @@ git branch --no-merged   # list these; force-delete only what the user confirms,
 - **Meta:** `robots.txt`, `humans.txt`, structured data templates (JSON-LD, OpenGraph)
 - **Docs/changelog:** `README.md`, `CHANGELOG.md`, `docs/` prose (not build output)
 
+### History scrubbing 🔥
+
+**`git filter-repo` is a separate install — not a git built-in.** `git --filter-repo` is wrong (that's a git flag); the command is `git filter-repo`. Install first:
+
+```bash
+brew install git-filter-repo   # macOS
+pip install git-filter-repo    # any platform
+```
+
+Then scrub a file from the full commit history:
+
+```bash
+# Remove a specific file (e.g. .env) from all history
+git filter-repo --path .env --invert-paths
+
+# Force push after — history has been rewritten
+git push origin <branch> --force
+```
+
+**Graveyard hard stop:** if Phase 2 surfaces committed secrets (`.env`, credentials, API keys), stop before any other cleanup and confirm the user wants to scrub history. filter-repo rewrites every SHA — anyone with a local clone will need to re-clone or hard reset. For a repo about to be archived, that's usually fine; for an active repo, coordinate first.
+
 ### OS/editor cruft recipes 🧹
 
 ```bash
