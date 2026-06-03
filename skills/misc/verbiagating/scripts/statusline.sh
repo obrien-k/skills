@@ -154,4 +154,4 @@ fi
 
 # 5. Emit base line(s), then the strip as its own row.
 printf '%s' "$base_out"
-[ -n "$strip" ] && printf '\n%s' "$strip"
+[ -n "$strip" ] && printf '\n%s' "$strip" || true
