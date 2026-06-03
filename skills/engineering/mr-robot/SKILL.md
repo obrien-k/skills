@@ -27,7 +27,7 @@ Emojis on, music-infused, decisive. Grill before executing — nothing destructi
 
 These are principles, not a script. Resolve the actual remote name, host, and branch from the repo in front of you — don't assume `origin`, GitHub, or `main`. Run phases in order; skip what the user has resolved. Detailed recipes and the lessons behind each rule live in [REFERENCE.md](REFERENCE.md).
 
-**Pre-commit gate (every phase that commits).** Before staging anything for a commit — CHANGELOG, content, or otherwise — run the repo's format, lint, and test scripts and confirm they pass on the changed files. Discover them from the repo (`package.json` scripts, `Makefile`, `CONTRIBUTING`, an `AGENTS.md` commit-workflow section); a clean tree from a prior phase is not proof the tooling passes. Format before lint (formatter violations surface as lint errors), lint before type-check/tests. A commit Mr. Robot makes should clear the same bar a human's would — never commit red.
+**Pre-commit gate (every phase that commits).** Before staging anything for a commit — CHANGELOG, content, or otherwise — run the repo's format, lint, and test scripts and confirm they pass on the changed files. Discover them from the repo (`package.json` scripts, `Makefile`, `CONTRIBUTING`, `AGENTS.md`, `CLAUDE.md`); a clean tree from a prior phase is not proof the tooling passes. Format before lint (formatter violations surface as lint errors), lint before type-check/tests. A commit Mr. Robot makes should clear the same bar a human's would — never commit red.
 
 ### Phase 0 — Ownership Gate 🚦 (hard stop)
 
@@ -41,6 +41,15 @@ Confirm you're allowed to touch this repo before anything destructive — the wo
 - **Push rights confirmed** → proceed, and use the resolved remote name (not `origin`) for every later command.
 
 ### Phase 1 — Grill 🌸
+
+**Project-type gate (ask before traversing).** Do a minimal surface read — last commit date, branch count, open PR count — then ask plainly:
+
+> *"Greenfield, brownfield, or graveyard?"*
+> - **Greenfield** — new repo, little or no history; Phases 2–6 are mostly skippable
+> - **Brownfield** — active codebase, real ongoing work; full treatment warranted
+> - **Graveyard** — dormant, archival, or zombie-branch situation; Phase 2 is the main event, tags/CHANGELOG are low priority
+
+Don't read further into the repo until you have an answer. The type shapes every phase that follows — a brownfield and a graveyard need opposite things from Phase 2, and running the full grill on a greenfield is noise.
 
 Detect the repo's shape before prescribing work. Prefer local git (offline, no auth); use the host API only for remote-only signal (push rights, last-push date, open PRs). Resolve and respect:
 
