@@ -27,7 +27,7 @@ Emojis on, music-infused, decisive. Grill before executing — nothing destructi
 
 These are principles, not a script. Resolve the actual remote name, host, and branch from the repo in front of you — don't assume `origin`, GitHub, or `main`. Run phases in order; skip what the user has resolved. Detailed recipes and the lessons behind each rule live in [REFERENCE.md](REFERENCE.md).
 
-**Pre-commit gate (every phase that commits).** Before staging anything for a commit — CHANGELOG, content, or otherwise — run the repo's format, lint, and test scripts and confirm they pass on the changed files. Discover them from the repo (`package.json` scripts, `Makefile`, `CONTRIBUTING`, an `AGENTS.md` commit-workflow section); a clean tree from a prior phase is not proof the tooling passes. Format before lint (formatter violations surface as lint errors), lint before type-check/tests. A commit Mr. Robot makes should clear the same bar a human's would — never commit red.
+**Pre-commit gate (every phase that commits).** Before staging anything for a commit — CHANGELOG, content, or otherwise — run the repo's format, lint, and test scripts and confirm they pass on the changed files. Discover them from the repo (`package.json` scripts, `Makefile`, `CONTRIBUTING`, `AGENTS.md`, `CLAUDE.md`); a clean tree from a prior phase is not proof the tooling passes. Format before lint (formatter violations surface as lint errors), lint before type-check/tests. A commit Mr. Robot makes should clear the same bar a human's would — never commit red.
 
 ### Phase 0 — Ownership Gate 🚦 (hard stop)
 
@@ -42,10 +42,19 @@ Confirm you're allowed to touch this repo before anything destructive — the wo
 
 ### Phase 1 — Grill 🌸
 
+**Project-type gate (ask before traversing).** Do a minimal surface read — last commit date, branch count, open PR count — then ask plainly:
+
+> *"Greenfield, brownfield, or graveyard?"*
+> - **Greenfield** — new repo, little or no history; Phases 2–6 are mostly skippable
+> - **Brownfield** — active codebase, real ongoing work; full treatment warranted
+> - **Graveyard** — dormant, archival, or zombie-branch situation; Phase 2 is the main event, tags/CHANGELOG are low priority
+
+Don't read further into the repo until you have an answer. The type shapes every phase that follows — a brownfield and a graveyard need opposite things from Phase 2, and running the full grill on a greenfield is noise.
+
 Detect the repo's shape before prescribing work. Prefer local git (offline, no auth); use the host API only for remote-only signal (push rights, last-push date, open PRs). Resolve and respect:
 
 - **Default branch** — query it, never assume. Protected set = default + `develop` + `staging` + open-PR branches + any release/tracking branches below.
-- **Merge style + linear-history rule** — query the repo's allowed merge methods *before* prescribing any consolidation: `gh api repos/{owner}/{repo} --jq '{merge: .allow_merge_commit, squash: .allow_squash_merge, rebase: .allow_rebase_merge}'`, plus `required_linear_history` on the default branch's protection. **This dictates the entire branch-cleanup shape.** A **rebase-only / linear-history** repo cannot absorb a branch that contains merge commits — the rebase can't replay them, so the PR silently won't merge (it sits OPEN, base unchanged, often misread as a flaky button or a permissions issue). On such repos: keep every branch destined for the default branch **linear** (no `Merge branch ...` commits); when a branch already has merge commits baked in, don't try to fix it in place — cut a fresh branch off the target and replay the *content* (squash-merge locally or cherry-pick the non-merge commits), then open the PR from that clean branch. Squash-only and merge-commit-only repos have their own constraints; match the repo, don't impose a house style. Detect this in Phase 1 so Phase 2 doesn't build branches the repo can't merge.
+- **Merge style** — use MCP or `gh api` to query allowed merge methods and `required_linear_history` on the default branch. Match what the repo allows; don't impose a house style. Detect before Phase 2 so you don't build branches the repo can't merge. → [linear-history edge cases](REFERENCE.md)
 - **Bot/generated repo** (>80% `[bot]`/release-bot commits) → build artifact; ask if the real source is elsewhere, skip tags + CHANGELOG.
 - **Release automation** (`.releaserc`, `.goreleaser`, `release-please`, or language equivalents) → tags + CHANGELOG are automated; skip Phases 3 and 5.
 - **Tag scheme** — semver vs. milestone/build (`b1046`, `defcon32`). Respect what exists; don't overlay semver on a non-semver scheme.
@@ -60,23 +69,9 @@ Then run [`/grill-me`](https://github.com/mattpocock/skills/blob/main/skills/pro
 2. Delete remote branches via the host API (`git push --delete` hits permission walls on org repos), excluding the protected set.
 3. **Dependabot pruning — all or nothing.** If the repo has dependabot branches, close ALL open dependabot PRs and delete ALL their branches in the same sweep. Leaving even one active branch signals Dependabot the integration is live and it will resume filing updates within days — undoing the cleanup. Use `gh pr close --delete-branch` to handle both in one step. `gh pr list` paginates at 30 by default; always pass `--paginate` or do a second pass to catch stragglers. Bot PRs from external forks (branch lives on the fork, not origin) can be closed but their branch can't be deleted from upstream — that's expected, not an error.
 4. **Local branches: merged-only (`git branch -d`) — never blanket `-D`.** Force-delete silently destroys unmerged work, and a graveyard repo can hide dozens of unmerged feature branches. List `--no-merged` and force-delete only what the user confirms abandoned, one at a time.
-5. **Content-file check — hard stop.** For every unmerged branch, inspect what it actually touched. If any commit modifies author-owned content — stop and ask: *"Were these content changes explicitly requested?"* If the answer is no, or unclear, the branch is session damage: a prior agent changed content it wasn't asked to change, then created a branch to cover its tracks. Discard it. Never merge session damage into the default branch; never treat "it compiles" as authorization.
+5. **Content-file check — hard stop.** For every unmerged branch, inspect what it touched. If any commit modifies author-owned content — stop and ask: *"Were these content changes explicitly requested?"* If unclear, the branch is session damage; discard it. Never merge session damage into the default branch. When in doubt: if a human wrote the words and didn't ask you to change them, it's author-owned. → [author-owned content patterns](REFERENCE.md)
 
-   **Author-owned content patterns (across SSGs):**
-   - **Posts/pages:** `_posts/`, `_drafts/`, `content/`, `src/pages/`, `pages/`, `blog/`, `articles/`, standalone `.md`/`.mdx` files at repo root
-   - **Collections/data:** `_pages/`, `_featured_categories/`, `_data/` (bios, nav, authors), Hugo/Gatsby content collections
-   - **Templates with prose:** `_includes/`, `_layouts/` partials that embed authored copy
-   - **Syndication:** `feed.xml`, `atom.xml`, `rss.xml` templates — even if output is generated, the template is authored
-   - **Meta:** `robots.txt`, `humans.txt`, structured data templates (JSON-LD, OpenGraph)
-   - **Docs/changelog:** `README.md`, `CHANGELOG.md`, `docs/` prose (not build output)
-
-   When in doubt: if a human wrote the words and didn't ask you to change them, it's author-owned.
-
-6. **OS/editor cruft — sweep + ignore, never commit.** Working trees accumulate machine-local junk: `.DS_Store` (macOS), `Thumbs.db`/`desktop.ini` (Windows), `*.swp`/`*~` (vim/emacs), `.idea/` & per-user `.vscode/`. Sweep it, but stay surgical:
-   - Delete only **untracked** cruft (`find <repo> -name .DS_Store -not -path '*/.git/*' -not -path '*/node_modules/*' -delete`); never delete tracked content, and verify nothing matches `git ls-files` before deleting.
-   - If a cruft file is already **tracked** (slipped in before any ignore existed), `git rm --cached` it as part of a deliberate commit — don't leave a half-ignored file that's both tracked and ignored.
-   - Prevent recurrence in the right place: for personal-machine OS cruft, prefer the user's **global** ignore (`core.excludesfile`, defaulting to `~/.config/git/ignore`) so every repo is covered without polluting each repo's `.gitignore`. Only add to a repo's own `.gitignore` when that's already the team convention there (and remember it's a committed change — branch/PR on protected repos).
-   - Lesson: `.DS_Store` regenerates the instant Finder touches a folder — deleting without a global ignore is a treadmill. Ignore first, then sweep. Sweep the whole repo set in one pass (paired API/UI clones both collect it).
+6. **OS/editor cruft — sweep + ignore, never commit.** Delete only **untracked** junk (`.DS_Store`, `Thumbs.db`, `*.swp`, `.idea/`, `.vscode/`); if already tracked, `git rm --cached` it. Prefer global ignore (`~/.config/git/ignore`) over repo `.gitignore` for personal OS cruft. → [cruft recipes](REFERENCE.md)
 
 ### Phase 3 — Version Tags 🏷️
 
