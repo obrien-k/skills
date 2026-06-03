@@ -1,12 +1,12 @@
 # verbiagating — phrase-pin map.  phrase<TAB>label<TAB>url
 # turn-start.sh lowercases your prompt and pins the FIRST row whose <phrase>
 # appears as a substring. The pinned <label>/<url> then overrides the tiered
-# item for that turn's wait (precedence: pin > 69 > HADOUKEN > tier). url optional.
+# item for that turn's wait (precedence: pin > 69 > Ken > tier). url optional.
 # Lines starting with # and blank lines are ignored.
 # Pick DISTINCTIVE trigger words — a common one (fix, build, test) would pin on
 # nearly every prompt. Edit freely.
 #
-hadouken	🔥🌀 HADOUKEN	https://www.ssbwiki.com/Hadoken
+hadouken	🔥🌀 HADOUKEN	https://ssb.wiki.gallery/images/8/87/Kencombo.gif
 shoryuken	🐉☝️ SHORYUKEN
 rickroll	🎵 Never gonna give you up	https://www.youtube.com/watch?v=eBGIQ7ZuuiU
 ship it	🎉🤖 Elliot shipped — v1.0!

@@ -40,8 +40,7 @@ being helpful, drop it.
 2. Overrides (checked in order; first hit wins over the tier pick):
      a. PHRASE-PIN — if the user's message contains one of these substrings
         (case-insensitive), use its line instead of a tiered pick:
-           hadouken    → 🔥🌀 HADOUKEN
-           ken combo   → 👊 Ken combo-ing. ⚔️   https://ssb.wiki.gallery/images/8/87/Kencombo.gif
+           hadouken    → 🔥🌀 HADOUKEN   https://ssb.wiki.gallery/images/8/87/Kencombo.gif
            shoryuken   → 🐉☝️ SHORYUKEN
            rickroll    → 🎵 Never gonna give you up
            ship it     → 🎉🤖 Elliot shipped — v1.0!
@@ -58,7 +57,7 @@ being helpful, drop it.
        ⚡ It's Pikachu!
        soh-ho-kay-her'rs-thee-earth'-szjhst-chillin 🌏🌎💥
      SWEET SPOT (a "versioned drop")
-       Conversion, softtware version 🥁 7.0
+       Conversion, software version 🥁 7.0
      HEAVY
        We're no strangers to love..
        🧌 FUCKINDOITLIVE.gif 👹
@@ -92,10 +91,11 @@ sandbox — copy that block out and run it to eyeball the card format.
 - **Word-count is the only signal a generic agent reliably has about its own
   effort.** It's a coarse proxy for "how hard was that," which is the whole point —
   a throwaway one-liner shouldn't earn a heavy card.
-- **Ken returns as a phrase-pin, not the runtime's ~50%-context drop.** A generic
-  agent has no context gauge, so "Ken at ~50%" can't fire honestly here; instead the
-  Ken combo is content-addressed — say "ken combo" — and links the GIF at
-  `https://ssb.wiki.gallery/images/8/87/Kencombo.gif`.
+- **Ken is invoked via the `hadouken` phrase-pin, not the runtime's ~50%-context drop.**
+  A generic agent has no context gauge, so "Ken at ~50%" can't fire honestly here;
+  instead the user invokes it by mentioning **hadouken**, which links the Ken combo GIF
+  (`https://ssb.wiki.gallery/images/8/87/Kencombo.gif`). "hadouken" is the user-facing
+  trigger; `KEN_*` is the internal name.
 - **Duration and bar are explicitly performed.** Don't dress them up as real; the
   feature is window-decoration by design (see [SKILL.md](SKILL.md)).
 - Keep this corpus in loose sync with the corpus in [SKILL.md](SKILL.md) /

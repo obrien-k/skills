@@ -83,12 +83,12 @@ out_tokens=$(printf '%s' "$input" | jq -r '.context_window.total_output_tokens /
 [ -z "$out_tokens" ] && out_tokens=0
 NICE_TOKENS=69   # retarget by changing this one number
 
-# HADOUKEN drop (codename) — realized as Ken's combo, fired at the middling ~50%
-# context mark (comme ci comme ça — the halfway slog), not the old 120–150s time
-# band. Context-addressed, no specific tier.
+# Ken's combo (KEN_*) — fired at the middling ~50% context mark (comme ci comme
+# ça, the halfway slog), not a time band. Context-addressed, no specific tier.
+# "hadouken" is the user-facing trigger (phrases.tsv); KEN_* is the internal name.
 KEN_PCT=50
 KEN_LABEL='👊Ken combo-ing.⚔️'
-KEN_URL='https://www.ssbwiki.com/Ken_Combo#/media/File:Kencombo.gif'
+KEN_URL='https://ssb.wiki.gallery/images/8/87/Kencombo.gif'
 
 # 3. Elapsed since turn start (UserPromptSubmit hook wrote the epoch).
 elapsed=-1
@@ -106,7 +106,7 @@ strip=""
 mode="plain"; [ -f "$MODE_FILE" ] && mode=$(tr -d '[:space:]' < "$MODE_FILE")
 if [ "$elapsed" -ge 0 ]; then
   # --- active wait. Overrides pierce the silent floor and win over the tiered
-  #     pick; precedence: phrase-pin > 69 > HADOUKEN (~50%) > tiered item. ---
+  #     pick; precedence: phrase-pin > 69 > Ken (~50%) > tiered item. ---
 
   # 1) Phrase-pin: turn-start.sh matched a key phrase and wrote "<label>\t<url>".
   if [ -n "$session_id" ] && [ -f "$pin_file" ]; then
@@ -119,7 +119,7 @@ if [ "$elapsed" -ge 0 ]; then
     strip="Nice."
   fi
 
-  # 3) HADOUKEN (Ken combo) at the ~50% halfway mark.
+  # 3) Ken's combo at the ~50% halfway mark.
   if [ -z "$strip" ] && [ "$ctx_pct" = "$KEN_PCT" ]; then
     strip=$(render_strip "$KEN_LABEL" "$KEN_URL" "$mode")
   fi

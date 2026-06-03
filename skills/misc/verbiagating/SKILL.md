@@ -107,7 +107,7 @@ into it — that keeps the core string portable.
 - `soh-ho-kay-her'rs-thee-earth'-szjhst-chillin 🌏🌎💥🌍 .!Damn!🌏🌎💥` → https://www.youtube.com/watch?v=nZMwKPmsbWE
 
 ### The Sweet Spot — 6–7 min
-- `Conversion, softtware version 🥁 7.0` → https://www.youtube.com/watch?v=iywaBOMvYLI&list=RDiywaBOMvYLI&start_radio=1
+- `Conversion, software version 🥁 7.0` → https://www.youtube.com/watch?v=iywaBOMvYLI&list=RDiywaBOMvYLI&start_radio=1
 
 ### Heavy — 10 min+
 - `We're no strangers to love..` → https://www.youtube.com/watch?v=eBGIQ7ZuuiU
@@ -137,7 +137,7 @@ of token fill. Long-haul waits get the loudest drop, no ramp.
 
 Three signals can pre-empt the tier-selected item during an active wait. All
 **pierce the silent floor** (they can show before the 30s mark), and precedence
-runs **phrase-pin > 69 > HADOUKEN (~50%) > tiered item**.
+runs **phrase-pin > 69 > Ken (~50%) > tiered item**.
 
 ### Phrase-pin (`phrases.tsv`)
 
@@ -150,7 +150,7 @@ for the whole wait; `turn-end.sh` clears it (per-turn). Data shape mirrors
 `corpus.tsv` — `phrase⇥label⇥url`, `url` optional, `#`/blank lines ignored:
 
 ```
-hadouken	🔥🌀 HADOUKEN	https://www.youtube.com/watch?v=Hr95rKEYT5E
+hadouken	🔥🌀 HADOUKEN	https://ssb.wiki.gallery/images/8/87/Kencombo.gif
 ```
 
 This is also the answer to "why invoke `/verbiagating` each session?" — you
@@ -166,13 +166,14 @@ bare `Nice.` — no url, no other context. `total_output_tokens` is the peg
 because short replies occasionally hit 69 for real, so it fires as a rare
 coincidence rather than never. Retarget by changing the one constant.
 
-### HADOUKEN (`KEN_*`)
+### Ken's combo (`KEN_*`)
 
-Codename HADOUKEN, realized as Ken's combo: at the middling **~50% context**
-mark (`KEN_PCT`, the comme-ci-comme-ça halfway slog) the strip shows
-`👊Ken combo-ing.⚔️` linked to the Ken Combo gif. Context-addressed, not a time
-tier — it replaced the original 120–150s time-band idea. Label/url/mark are the
-`KEN_LABEL` / `KEN_URL` / `KEN_PCT` constants in `statusline.sh`.
+At the middling **~50% context** mark (`KEN_PCT`, the comme-ci-comme-ça halfway
+slog) the strip shows `👊Ken combo-ing.⚔️` linked to the Ken Combo gif.
+Context-addressed, not a time tier — it replaced the original 120–150s time-band
+idea. The user can also invoke it by mentioning **hadouken** (the phrase-pin, which
+links the same gif); internally it's `KEN_*`. Label/url/mark are the `KEN_LABEL` /
+`KEN_URL` / `KEN_PCT` constants in `statusline.sh`.
 
 ## Pi Wiring
 

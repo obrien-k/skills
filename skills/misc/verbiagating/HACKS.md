@@ -26,8 +26,9 @@ session fixes layered on top.
 - **`turn-start.sh`** — stale-marker GC (`find … -mtime +1 -delete`) so dead sessions don't
   litter `$TMPDIR/verbiagating`.
 - **`gallery.sh`** — a tier-preview renderer; not present in `scripts/` at all.
-- **`phrases.tsv`** — unchanged. Note: the `hadouken` URL is a pending hand-edit to
-  `https://www.youtube.com/watch?v=Hr95rKEYT5E` (the value `gallery.sh`'s pin already uses).
+- **`phrases.tsv`** — the `hadouken` pin links the Ken combo GIF
+  (`ssb.wiki.gallery/.../Kencombo.gif`), matching `KEN_URL`. "hadouken" is the
+  user-facing trigger; `KEN_*` is the internal name.
 
 > The *Simulacra / generic-agent profile* — a paste-in prompt payload that mimics the strip in
 > a runtime-less agent (ChatGPT/Custom GPT), keyed on the agent's own answer length — now lives
@@ -275,7 +276,7 @@ light	💅Bump a bitch.. just kiddin🖕
 light	🎉🤖 Elliot shipped — v1.0!	
 medium	⚡It's Pikachu!	https://www.youtube.com/watch?v=5QzEoWeybp4
 medium	soh-ho-kay-her'rs-thee-earth'-szjhst-chillin 🌏🌎💥🌍 .!Damn!🌏🌎💥	https://www.youtube.com/watch?v=nZMwKPmsbWE
-sweet	Conversion, softtware version 🥁 7.0	https://www.youtube.com/watch?v=iywaBOMvYLI&list=RDiywaBOMvYLI&start_radio=1
+sweet	Conversion, software version 🥁 7.0	https://www.youtube.com/watch?v=iywaBOMvYLI&list=RDiywaBOMvYLI&start_radio=1
 heavy	We're no strangers to love..	https://www.youtube.com/watch?v=eBGIQ7ZuuiU
 heavy	🧌FUCKINDOITLIVE.gif👹	https://www.youtube.com/watch?v=Qy-Y3HJNU_s
 ```
@@ -291,7 +292,7 @@ heavy	🧌FUCKINDOITLIVE.gif👹	https://www.youtube.com/watch?v=Qy-Y3HJNU_s
 # Pick DISTINCTIVE trigger words — a common one (fix, build, test) would pin on
 # nearly every prompt. Edit freely.
 #
-hadouken	🔥🌀 HADOUKEN	https://www.ssbwiki.com/Hadoken
+hadouken	🔥🌀 HADOUKEN	https://ssb.wiki.gallery/images/8/87/Kencombo.gif
 shoryuken	🐉☝️ SHORYUKEN
 rickroll	🎵 Never gonna give you up	https://www.youtube.com/watch?v=eBGIQ7ZuuiU
 ship it	🎉🤖 Elliot shipped — v1.0!
@@ -337,7 +338,7 @@ render() {
         "  brain cell............... 1/1" \
         "  vibes.................... MAXIMUM" ;;
     sweet)
-      card 88 "Conversion, softtware version 🥁 7.0" \
+      card 88 "Conversion, software version 🥁 7.0" \
         "https://www.youtube.com/watch?v=iywaBOMvYLI" ;;
     heavy)
       card 100 "🧌 FUCKINDOITLIVE.gif 👹" "https://www.youtube.com/watch?v=Qy-Y3HJNU_s" \
@@ -348,7 +349,7 @@ render() {
     69)
       printf 'Nice.\n' ;;            # the 69 override: bare, no bar, no body, no closeout
     pin)
-      card 75 "🔥🌀 HADOUKEN" "https://www.youtube.com/watch?v=Hr95rKEYT5E" ;;
+      card 75 "🔥🌀 HADOUKEN" "https://ssb.wiki.gallery/images/8/87/Kencombo.gif" ;;
     *) printf 'unknown tier: %s\n' "$1" >&2; return 1 ;;
   esac
 }
