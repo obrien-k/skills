@@ -129,7 +129,7 @@ in_tokens=$(printf '%s' "$input" | jq -r '.context_window.total_input_tokens // 
 [ -z "$in_tokens" ] && in_tokens=0
 NICE_LO=69000; NICE_HI=69999   # the "nice" band — retarget by moving these two
 
-# Ken's combo (KEN_*) — fired at the middling ~50% context mark (comme ci comme
+# Ken combo (KEN_*) — fired at the middling ~50% context mark (comme ci comme
 # ça, the halfway slog), not a time band. Context-addressed, no specific tier.
 KEN_PCT=50
 KEN_LABEL='👊Ken combo-ing.⚔️'
@@ -164,7 +164,7 @@ if [ "$elapsed" -ge 0 ]; then
     strip="Nice."
   fi
 
-  # 3) Ken's combo at the ~50% halfway mark.
+  # 3) Ken combo at the ~50% halfway mark.
   if [ -z "$strip" ] && [ "$ctx_pct" = "$KEN_PCT" ]; then
     strip=$(render_strip "$KEN_LABEL" "$KEN_URL" "$mode")
   fi

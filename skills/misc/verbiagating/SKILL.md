@@ -166,7 +166,7 @@ bare `Nice.` — no url, no other context. `total_output_tokens` is the peg
 because short replies occasionally hit 69 for real, so it fires as a rare
 coincidence rather than never. Retarget by changing the one constant.
 
-### Ken's combo (`KEN_*`)
+### Ken combo (`KEN_*`)
 
 At the middling **~50% context** mark (`KEN_PCT`, the comme-ci-comme-ça halfway
 slog) the strip shows `👊Ken combo-ing.⚔️` linked to the Ken Combo gif.

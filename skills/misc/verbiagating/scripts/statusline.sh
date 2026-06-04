@@ -83,7 +83,7 @@ out_tokens=$(printf '%s' "$input" | jq -r '.context_window.total_output_tokens /
 [ -z "$out_tokens" ] && out_tokens=0
 NICE_TOKENS=69   # retarget by changing this one number
 
-# Ken's combo (KEN_*) — fired at the middling ~50% context mark (comme ci comme
+# Ken combo (KEN_*) — fired at the middling ~50% context mark (comme ci comme
 # ça, the halfway slog), not a time band. Context-addressed, no specific tier.
 # "hadouken" is the user-facing trigger (phrases.tsv); KEN_* is the internal name.
 KEN_PCT=50
@@ -119,7 +119,7 @@ if [ "$elapsed" -ge 0 ]; then
     strip="Nice."
   fi
 
-  # 3) Ken's combo at the ~50% halfway mark.
+  # 3) Ken combo at the ~50% halfway mark.
   if [ -z "$strip" ] && [ "$ctx_pct" = "$KEN_PCT" ]; then
     strip=$(render_strip "$KEN_LABEL" "$KEN_URL" "$mode")
   fi
