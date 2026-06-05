@@ -148,7 +148,10 @@ elif [ -n "$session_id" ] && [ -f "$done_file" ]; then
   read -r done_elapsed done_epoch < "$done_file" 2>/dev/null || true
   : "${done_epoch:=0}"; : "${done_elapsed:=0}"
   if [ $(( $(date +%s) - done_epoch )) -lt "$CLOSEOUT_LINGER" ]; then
-    strip="verbiagated for $(fmt_dur "$done_elapsed")"
+    if command -v node >/dev/null 2>&1 && [ -f "$VG_HOME/rainbow.js" ]; then
+      strip=$(node "$VG_HOME/rainbow.js" "$done_elapsed" 2>/dev/null)
+    fi
+    [ -z "$strip" ] && strip="verbiagated for $(fmt_dur "$done_elapsed")"
   fi
 fi
 

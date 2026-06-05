@@ -1,0 +1,48 @@
+'use strict';
+
+const DEFAULT_PIN = { icon: '⚡️', phrase: '10万ボルト', verb: '10万ボルトed' };
+
+function hslToRgb(h, s, l) {
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) => {
+    const k = (n + h / 30) % 12;
+    return Math.round((l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255);
+  };
+  return [f(0), f(8), f(4)];
+}
+
+// Sweeps hue from 0° (red) to 320° (hot pink/magenta) — not a full 360 loop.
+function rainbow(text, offset = 0) {
+  const chars = [...text];
+  const out = chars.map((ch, i) => {
+    const hue = (offset + (i / Math.max(chars.length - 1, 1)) * 320) % 360;
+    const [r, g, b] = hslToRgb(hue, 1, 0.5);
+    return `\x1b[38;2;${r};${g};${b}m${ch}`;
+  });
+  return out.join('') + '\x1b[0m';
+}
+
+function fmtDuration(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const parts = [];
+  if (h) parts.push(`${h}h`);
+  if (m) parts.push(`${m}m`);
+  parts.push(`${sec}s`);
+  return parts.join(' ');
+}
+
+function verbiagateDoneLabel(pin = DEFAULT_PIN, durationMs) {
+  return rainbow(`${pin.verb} for ${fmtDuration(durationMs)}`);
+}
+
+if (require.main === module) {
+  const elapsedSec = parseInt(process.argv[2] ?? '0', 10);
+  const verb = process.argv[3];
+  const pin = verb ? { ...DEFAULT_PIN, verb } : DEFAULT_PIN;
+  process.stdout.write(verbiagateDoneLabel(pin, elapsedSec * 1000) + '\n');
+}
+
+module.exports = { hslToRgb, rainbow, fmtDuration, verbiagateDoneLabel, DEFAULT_PIN };
