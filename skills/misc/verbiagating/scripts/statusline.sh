@@ -77,11 +77,20 @@ fi
 session_id=$(printf '%s' "$input" | jq -r '.session_id // empty')
 ctx_pct=$(printf '%s' "$input" | jq -r '.context_window.used_percentage // 0' | cut -d. -f1)
 [ -z "$ctx_pct" ] && ctx_pct=0
-# Live output-token count of the most recent response. Small enough to land on
-# exactly 69 now and then — the peg for the "Nice." nod (NICE_TOKENS below).
-out_tokens=$(printf '%s' "$input" | jq -r '.context_window.total_output_tokens // 0')
-[ -z "$out_tokens" ] && out_tokens=0
-NICE_TOKENS=69   # retarget by changing this one number
+# Total input-token count = context fill. Lands in the tens of thousands in any
+# real session, so a 69,000–69,999 band is a reachable, version-proof peg for the
+# "Nice." nod — unlike an exact output-token 69, dead on older clients and a
+# one-in-a-million graze on newer ones.
+in_tokens=$(printf '%s' "$input" | jq -r '.context_window.total_input_tokens // 0')
+[ -z "$in_tokens" ] && in_tokens=0
+NICE_LO=69000; NICE_HI=69999   # the "nice" band — retarget by moving these two
+
+# 10万ボルト (v8) — the 💀 graveyard zone. 10万 = 100,000; once context fill crosses
+# 100k input tokens you're "beyond ere," so it latches as a threshold (not a
+# fleeting band like NICE). Token-addressed, no specific tier.
+VOLT_TOKENS=100000
+VOLT_LABEL='⚡ v8 — 10万ボルト'
+VOLT_URL='https://www.youtube.com/watch?v=5QzEoWeybp4'
 
 # Ken combo (KEN_*) — fired at the middling ~50% context mark (comme ci comme
 # ça, the halfway slog), not a time band. Context-addressed, no specific tier.
@@ -106,7 +115,7 @@ strip=""
 mode="plain"; [ -f "$MODE_FILE" ] && mode=$(tr -d '[:space:]' < "$MODE_FILE")
 if [ "$elapsed" -ge 0 ]; then
   # --- active wait. Overrides pierce the silent floor and win over the tiered
-  #     pick; precedence: phrase-pin > 69 > Ken (~50%) > tiered item. ---
+  #     pick; precedence: phrase-pin > 69 > 10万ボルト (💀 ≥100k) > Ken (~50%) > tiered item. ---
 
   # 1) Phrase-pin: turn-start.sh matched a key phrase and wrote "<label>\t<url>".
   if [ -n "$session_id" ] && [ -f "$pin_file" ]; then
@@ -115,8 +124,13 @@ if [ "$elapsed" -ge 0 ]; then
   fi
 
   # 2) The 69: bare label, no url, no other context. A subtle homie nod.
-  if [ -z "$strip" ] && [ "$out_tokens" = "$NICE_TOKENS" ]; then
+  if [ -z "$strip" ] && [ "$in_tokens" -ge "$NICE_LO" ] && [ "$in_tokens" -le "$NICE_HI" ]; then
     strip="Nice."
+  fi
+
+  # 2b) 10万ボルト: the 💀 graveyard zone — context fill at/beyond 100k input tokens.
+  if [ -z "$strip" ] && [ "$in_tokens" -ge "$VOLT_TOKENS" ]; then
+    strip=$(render_strip "$VOLT_LABEL" "$VOLT_URL" "$mode")
   fi
 
   # 3) Ken combo at the ~50% halfway mark.
