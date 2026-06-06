@@ -58,7 +58,8 @@ URL never shows). Wrap the label in an OSC 8 terminal hyperlink, using the **BEL
 - Never inject the skill's own name into a **wait** strip: **"verbiagating" (or any
   similar verbiage) must not appear in any tiered wait message.** It's the internal name
   of the feature, nothing more. **One sanctioned exception:** the post-turn *closeout*
-  line is exactly `verbiagated for <Mm Ss>` — the name's only permitted appearance.
+  line (see [Closeout](#closeout-v81--🌈-rainbow)) — its plain fallback is exactly
+  `verbiagated for <Mm Ss>`, the name's only permitted appearance.
 
 ## Portable Rendering
 
@@ -174,6 +175,32 @@ Context-addressed, not a time tier — it replaced the original 120–150s time-
 idea. The user can also invoke it by mentioning **hadouken** (the phrase-pin, which
 links the same gif); internally it's `KEN_*`. Label/url/mark are the `KEN_LABEL` /
 `KEN_URL` / `KEN_PCT` constants in `statusline.sh`.
+
+## Closeout (v8.1 — 🌈 RAINBOW)
+
+When a wait ends, the strip lingers a beat as a **closeout** drop before
+dismissing — the payoff after the wait. `turn-end.sh` records `<elapsed>
+<finished_epoch>` to `$TMPDIR/verbiagating/<sid>.done` for any wait past the 30s
+silent floor; `statusline.sh` holds the closeout for `CLOSEOUT_LINGER` seconds
+(the host's idle `refreshInterval` re-renders it across that window).
+
+The drop is the full-spectrum realization of the v7.7 INDIGO band: the closeout
+label renders as a **per-grapheme truecolor rainbow** (red→magenta), led by the
+🌈 zap, carried through `render_strip` so it keeps iconography + link + text:
+
+```
+🌈⚡️ 10万ボルトed for 3m 4s        # rainbow gradient, clickable (osc8) ↗
+```
+
+- **Renderer:** `rainbow.js` (mirror: `rainbow.ts`) — `verbiagateDoneLabel(pin,
+  ms)` returns `rainbow(`${pin.icon} ${pin.verb} for <dur>`)`, and the CLI emits
+  `<label>\t<url>` (same contract as a phrase-pin) so `statusline.sh` can split
+  and feed both halves to `render_strip`. Default drop is the v8 `10万ボルト` pin.
+- **Grapheme-safe:** the gradient steps by grapheme cluster (`Intl.Segmenter`),
+  never by code point — so an emoji + its variation selector (`⚡` + U+FE0F) stays
+  one color unit instead of being split by an escape (which breaks presentation).
+- **Fallback:** no `node` (or no `rainbow.js`) → the plain `verbiagated for <Mm
+  Ss>` line. This is the lone sanctioned appearance of the skill's name.
 
 ## Pi Wiring
 

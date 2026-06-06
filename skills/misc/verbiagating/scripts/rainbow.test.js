@@ -32,7 +32,7 @@ test('fmtDuration formats m + s past a minute', () => {
 });
 
 test('DEFAULT_PIN carries iconography + verb + a link', () => {
-  assert.equal(DEFAULT_PIN.icon, '⚡️');
+  assert.equal(DEFAULT_PIN.icon, '🌈⚡️');
   assert.equal(DEFAULT_PIN.verb, '10万ボルトed');
   assert.equal(typeof DEFAULT_PIN.url, 'string');
   assert.match(DEFAULT_PIN.url, /^https?:\/\//);
@@ -40,7 +40,7 @@ test('DEFAULT_PIN carries iconography + verb + a link', () => {
 
 test('verbiagateDoneLabel leads with the icon, then the verbed text', () => {
   const label = strip(verbiagateDoneLabel(DEFAULT_PIN, 184000));
-  assert.equal(label, '⚡️ 10万ボルトed for 3m 4s');
+  assert.equal(label, '🌈⚡️ 10万ボルトed for 3m 4s');
 });
 
 test('verbiagateDoneLabel is rainbowed (carries color escapes)', () => {
@@ -53,5 +53,5 @@ test('CLI emits "<label>\\t<url>" so the closeout can render iconography+link+te
   const out = execFileSync('node', [script, '184'], { encoding: 'utf8' }).replace(/\n$/, '');
   const [label, url] = out.split('\t');
   assert.equal(url, DEFAULT_PIN.url, 'second field is the link');
-  assert.equal(strip(label), '⚡️ 10万ボルトed for 3m 4s', 'first field is the icon+verbed text');
+  assert.equal(strip(label), '🌈⚡️ 10万ボルトed for 3m 4s', 'first field is the icon+verbed text');
 });

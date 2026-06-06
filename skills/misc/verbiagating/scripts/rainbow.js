@@ -1,7 +1,7 @@
 'use strict';
 
 const DEFAULT_PIN = {
-  icon: '⚡️',
+  icon: '🌈⚡️',
   phrase: '10万ボルト',
   verb: '10万ボルトed',
   url: 'https://www.youtube.com/watch?v=5QzEoWeybp4',

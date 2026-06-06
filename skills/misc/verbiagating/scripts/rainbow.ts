@@ -1,7 +1,7 @@
 export type TierPin = { icon: string; phrase: string; verb: string; url: string };
 
 export const DEFAULT_PIN: TierPin = {
-  icon: '⚡️',
+  icon: '🌈⚡️',
   phrase: '10万ボルト',
   verb: '10万ボルトed',
   url: 'https://www.youtube.com/watch?v=5QzEoWeybp4',
