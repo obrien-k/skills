@@ -18,6 +18,14 @@ test('rainbow() still wraps each char in truecolor and resets at the end', () =>
   assert.equal(strip(out), 'hi');
 });
 
+test('rainbow() colors by grapheme — never splits an emoji from its variation selector', () => {
+  // ⚡️ is U+26A1 + U+FE0F; a per-codepoint sweep would wedge an escape between
+  // them and break emoji presentation. The pair must stay contiguous.
+  const out = rainbow('⚡️x');
+  assert.ok(out.includes('⚡️'), 'lightning emoji + VS16 stay adjacent (one color unit)');
+  assert.equal(strip(out), '⚡️x');
+});
+
 test('fmtDuration formats m + s past a minute', () => {
   assert.equal(fmtDuration(184000), '3m 4s');
   assert.equal(fmtDuration(4000), '4s');

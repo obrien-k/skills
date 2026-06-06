@@ -16,9 +16,14 @@ function hslToRgb(h, s, l) {
   return [f(0), f(8), f(4)];
 }
 
+const _seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
 // Sweeps hue from 0° (red) to 320° (hot pink/magenta) — not a full 360 loop.
+// Iterates by grapheme cluster (not code point) so an emoji and its variation
+// selector (e.g. ⚡ + U+FE0F) stay one color unit — splitting them with an escape
+// breaks emoji presentation in the terminal.
 function rainbow(text, offset = 0) {
-  const chars = [...text];
+  const chars = [..._seg.segment(text)].map((s) => s.segment);
   const out = chars.map((ch, i) => {
     const hue = (offset + (i / Math.max(chars.length - 1, 1)) * 320) % 360;
     const [r, g, b] = hslToRgb(hue, 1, 0.5);
