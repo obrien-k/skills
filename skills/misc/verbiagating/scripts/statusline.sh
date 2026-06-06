@@ -18,7 +18,7 @@ CORPUS="$VG_HOME/corpus.tsv"
 MODE_FILE="$VG_HOME/mode"                 # "plain" (default) | "osc8"
 BASE_FILE="$VG_HOME/base-statusline.cmd"  # the user's prior statusLine command
 STATE_DIR="${TMPDIR:-/tmp}/verbiagating"
-CLOSEOUT_LINGER=30                        # seconds the closeout line holds post-turn (idle refreshInterval re-renders it)
+CLOSEOUT_LINGER=600                       # holds the closeout until the next turn (turn-start clears it); capped so an abandoned session doesn't show it forever
 
 # ---------------------------------------------------------------------------
 # Host-agnostic core

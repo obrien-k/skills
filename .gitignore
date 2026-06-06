@@ -1,0 +1,9 @@
+# local Claude Code state
+.claude/settings.local.json
+.claude/*.lock
+
+# playwright MCP scratch (console logs, screenshots)
+.playwright-mcp/
+
+# stray screenshots
+resume-*.png
