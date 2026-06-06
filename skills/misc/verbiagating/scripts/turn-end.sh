@@ -15,7 +15,15 @@ if [ -f "$start_file" ]; then
   start=$(cat "$start_file" 2>/dev/null || echo 0)
   now=$(date +%s)
   elapsed=$(( now - start ))
-  [ "$elapsed" -ge 30 ] && printf '%s %s\n' "$elapsed" "$now" > "$dir/$sid.done"
+  if [ "$elapsed" -ge 30 ]; then
+    # ".done": line 1 "<elapsed> <epoch>", line 2 "<label>\t<url>" — the item that
+    # was spinning, snapshotted so the closeout freezes on it.
+    {
+      printf '%s %s\n' "$elapsed" "$now"
+      [ -f "$dir/$sid.last" ] && cat "$dir/$sid.last"
+    } > "$dir/$sid.done"
+  fi
   rm -f "$start_file"
 fi
+rm -f "$dir/$sid.last"   # spinning-item record is per-turn
 exit 0

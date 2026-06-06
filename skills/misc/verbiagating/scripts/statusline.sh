@@ -105,6 +105,7 @@ start_val=0
 start_file="$STATE_DIR/$session_id"
 done_file="$STATE_DIR/$session_id.done"
 pin_file="$STATE_DIR/$session_id.pin"   # phrase-pinned item for this turn (turn-start.sh)
+last_file="$STATE_DIR/$session_id.last" # the item currently spinning, for the closeout to freeze on
 if [ -n "$session_id" ] && [ -f "$start_file" ]; then
   start_val=$(cat "$start_file" 2>/dev/null || echo 0)
   [ -n "$start_val" ] && elapsed=$(( $(date +%s) - start_val ))
@@ -114,32 +115,34 @@ fi
 strip=""
 mode="plain"; [ -f "$MODE_FILE" ] && mode=$(tr -d '[:space:]' < "$MODE_FILE")
 if [ "$elapsed" -ge 0 ]; then
-  # --- active wait. Overrides pierce the silent floor and win over the tiered
-  #     pick; precedence: phrase-pin > 69 > 10万ボルト (💀 ≥100k) > Ken (~50%) > tiered item. ---
+  # --- active wait. First PICK the item (precedence: phrase-pin > 69 > 10万ボルト
+  #     (💀 ≥100k) > Ken (~50%) > tiered), then RENDER it with the spinning
+  #     INDIGO→MAGENTA gradient and record it for the closeout to freeze on. ---
+  picked_label=""; picked_url=""; bare=""
 
   # 1) Phrase-pin: turn-start.sh matched a key phrase and wrote "<label>\t<url>".
   if [ -n "$session_id" ] && [ -f "$pin_file" ]; then
     IFS=$'\t' read -r pin_label pin_url < "$pin_file" 2>/dev/null || true
-    [ -n "${pin_label:-}" ] && strip=$(render_strip "$pin_label" "${pin_url:-}" "$mode")
+    [ -n "${pin_label:-}" ] && { picked_label="$pin_label"; picked_url="${pin_url:-}"; }
   fi
 
-  # 2) The 69: bare label, no url, no other context. A subtle homie nod.
-  if [ -z "$strip" ] && [ "$in_tokens" -ge "$NICE_LO" ] && [ "$in_tokens" -le "$NICE_HI" ]; then
-    strip="Nice."
+  # 2) The 69: a subtle homie nod — bare label, never spun or linked.
+  if [ -z "$picked_label" ] && [ "$in_tokens" -ge "$NICE_LO" ] && [ "$in_tokens" -le "$NICE_HI" ]; then
+    bare="Nice."
   fi
 
   # 2b) 10万ボルト: the 💀 graveyard zone — context fill at/beyond 100k input tokens.
-  if [ -z "$strip" ] && [ "$in_tokens" -ge "$VOLT_TOKENS" ]; then
-    strip=$(render_strip "$VOLT_LABEL" "$VOLT_URL" "$mode")
+  if [ -z "$picked_label" ] && [ -z "$bare" ] && [ "$in_tokens" -ge "$VOLT_TOKENS" ]; then
+    picked_label="$VOLT_LABEL"; picked_url="$VOLT_URL"
   fi
 
   # 3) Ken combo at the ~50% halfway mark.
-  if [ -z "$strip" ] && [ "$ctx_pct" = "$KEN_PCT" ]; then
-    strip=$(render_strip "$KEN_LABEL" "$KEN_URL" "$mode")
+  if [ -z "$picked_label" ] && [ -z "$bare" ] && [ "$ctx_pct" = "$KEN_PCT" ]; then
+    picked_label="$KEN_LABEL"; picked_url="$KEN_URL"
   fi
 
   # 4) Normal tiered item, held stable for the whole turn.
-  if [ -z "$strip" ]; then
+  if [ -z "$picked_label" ] && [ -z "$bare" ]; then
     tier=$(select_tier "$elapsed" "$ctx_pct")
     if [ "$tier" != "silent" ] && [ -f "$CORPUS" ]; then
       labels=(); urls=()
@@ -153,23 +156,40 @@ if [ "$elapsed" -ge 0 ]; then
         # refreshes (no flicker), fresh on the next turn. No extra state writes.
         h=$(printf '%s' "${session_id}:${tier}:${start_val}" | cksum | cut -d' ' -f1)
         idx=$(( h % n ))
-        strip=$(render_strip "${labels[$idx]}" "${urls[$idx]}" "$mode")
+        picked_label="${labels[$idx]}"; picked_url="${urls[$idx]}"
       fi
     fi
   fi
+
+  if [ -n "$bare" ]; then
+    strip="$bare"
+  elif [ -n "$picked_label" ]; then
+    # Spin the picked item (INDIGO→MAGENTA band, cycling on elapsed); fall back to
+    # the plain label if node is unavailable. Record it for the closeout freeze.
+    spun="$picked_label"
+    if command -v node >/dev/null 2>&1 && [ -f "$VG_HOME/rainbow.js" ]; then
+      s=$(node "$VG_HOME/rainbow.js" spin "$elapsed" "$picked_label" 2>/dev/null)
+      [ -n "$s" ] && spun="$s"
+    fi
+    strip=$(render_strip "$spun" "$picked_url" "$mode")
+    [ -n "$session_id" ] && printf '%s\t%s\n' "$picked_label" "${picked_url}" > "$last_file"
+  fi
 elif [ -n "$session_id" ] && [ -f "$done_file" ]; then
-  # --- closeout: Stop hook recorded "<elapsed> <finished_epoch>"; linger briefly ---
-  read -r done_elapsed done_epoch < "$done_file" 2>/dev/null || true
+  # --- closeout: ".done" holds line 1 "<elapsed> <finished_epoch>" and line 2
+  #     "<label>\t<url>" (the item that was spinning). Linger, then freeze it as a
+  #     full rainbow ending on #c594a9. ---
+  done_elapsed=0; done_epoch=0; done_label=""; done_url=""
+  { read -r done_elapsed done_epoch; IFS=$'\t' read -r done_label done_url; } < "$done_file" 2>/dev/null || true
   : "${done_epoch:=0}"; : "${done_elapsed:=0}"
   if [ $(( $(date +%s) - done_epoch )) -lt "$CLOSEOUT_LINGER" ]; then
     if command -v node >/dev/null 2>&1 && [ -f "$VG_HOME/rainbow.js" ]; then
-      # rainbow.js emits "<rainbowed icon+verbed label>\t<url>" — split and run it
-      # through render_strip so the closeout carries iconography + link + text.
-      done_line=$(node "$VG_HOME/rainbow.js" "$done_elapsed" 2>/dev/null)
-      IFS=$'\t' read -r done_label done_url <<EOF
+      # "done <dur> [label] [url]" → "<rainbow label> for <dur>\t<url>" (empty
+      # label falls back to the default 10万ボルト drop). Carry it through render_strip.
+      done_line=$(node "$VG_HOME/rainbow.js" done "$done_elapsed" "${done_label:-}" "${done_url:-}" 2>/dev/null)
+      IFS=$'\t' read -r out_label out_url <<EOF
 $done_line
 EOF
-      [ -n "${done_label:-}" ] && strip=$(render_strip "$done_label" "${done_url:-}" "$mode")
+      [ -n "${out_label:-}" ] && strip=$(render_strip "$out_label" "${out_url:-}" "$mode")
     fi
     [ -z "$strip" ] && strip="verbiagated for $(fmt_dur "$done_elapsed")"
   fi

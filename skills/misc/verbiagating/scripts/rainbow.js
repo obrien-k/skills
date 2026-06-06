@@ -7,6 +7,17 @@ const DEFAULT_PIN = {
   url: 'https://www.youtube.com/watch?v=5QzEoWeybp4',
 };
 
+// Closeout terminal color — the dusty magenta #c594a9 ≈ HSL(334°, 30%, 68%).
+const END_RGB = [197, 148, 169];
+const END_HUE = 334, END_SAT = 0.3, END_LIGHT = 0.68;
+
+// Active-wait "spin" band: INDIGO (270°) → MAGENTA (334°), ping-ponged so it
+// cycles without a hard seam. Offset advances with elapsed → the band slides.
+const SPIN_FROM_HUE = 270, SPIN_TO_HUE = END_HUE, SPIN_SPEED = 0.15;
+
+const _seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+const graphemes = (text) => [..._seg.segment(text)].map((s) => s.segment);
+
 function hslToRgb(h, s, l) {
   const a = s * Math.min(l, 1 - l);
   const f = (n) => {
@@ -16,20 +27,47 @@ function hslToRgb(h, s, l) {
   return [f(0), f(8), f(4)];
 }
 
-const _seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+// triangle wave, period 1, range [0,1] — ping-pong so the band has no seam.
+const triangle = (x) => {
+  const u = x - Math.floor(x);
+  return u < 0.5 ? u * 2 : 2 - u * 2;
+};
 
-// Sweeps hue from 0° (red) to 320° (hot pink/magenta) — not a full 360 loop.
-// Iterates by grapheme cluster (not code point) so an emoji and its variation
-// selector (e.g. ⚡ + U+FE0F) stay one color unit — splitting them with an escape
-// breaks emoji presentation in the terminal.
-function rainbow(text, offset = 0) {
-  const chars = [..._seg.segment(text)].map((s) => s.segment);
-  const out = chars.map((ch, i) => {
-    const hue = (offset + (i / Math.max(chars.length - 1, 1)) * 320) % 360;
-    const [r, g, b] = hslToRgb(hue, 1, 0.5);
-    return `\x1b[38;2;${r};${g};${b}m${ch}`;
+// Colors each grapheme cluster (not code point) so an emoji + its variation
+// selector stay one color unit; `colorAt(t, i, n) -> [r,g,b]`.
+function colorize(text, colorAt) {
+  const g = graphemes(text);
+  const n = g.length;
+  return (
+    g
+      .map((ch, i) => {
+        const t = n > 1 ? i / (n - 1) : 0;
+        const [r, gr, b] = colorAt(t, i, n);
+        return `\x1b[38;2;${r};${gr};${b}m${ch}`;
+      })
+      .join('') + '\x1b[0m'
+  );
+}
+
+// Active wait: the INDIGO→MAGENTA band, cycling with elapsed (the "spin").
+function spin(text, elapsedSec = 0) {
+  const offset = elapsedSec * SPIN_SPEED;
+  return colorize(text, (t) => {
+    const u = triangle(t + offset);
+    const hue = SPIN_FROM_HUE + u * (SPIN_TO_HUE - SPIN_FROM_HUE);
+    return hslToRgb(hue, 0.7, 0.58);
   });
-  return out.join('') + '\x1b[0m';
+}
+
+// Closeout: the full red→magenta rainbow, frozen, landing exactly on #c594a9.
+function done(text) {
+  return colorize(text, (t, i, n) => {
+    if (i === n - 1) return END_RGB; // exact terminal color
+    const hue = t * END_HUE; // 0 (red) → 334, through the spectrum
+    const sat = 1 + t * (END_SAT - 1); // 1.0 → 0.30
+    const light = 0.5 + t * (END_LIGHT - 0.5); // 0.5 → 0.68
+    return hslToRgb(hue, sat, light);
+  });
 }
 
 function fmtDuration(ms) {
@@ -44,20 +82,21 @@ function fmtDuration(ms) {
   return parts.join(' ');
 }
 
-// Leads with the pin's iconography, then the verbed phrase + duration — the
-// whole run rainbowed. The link rides alongside (emitted by the CLI as a second
-// TSV field), so the closeout can fuse iconography + link + text via render_strip.
-function verbiagateDoneLabel(pin = DEFAULT_PIN, durationMs) {
-  return rainbow(`${pin.icon} ${pin.verb} for ${fmtDuration(durationMs)}`);
-}
-
 if (require.main === module) {
-  const elapsedSec = parseInt(process.argv[2] ?? '0', 10);
-  const verb = process.argv[3];
-  const pin = verb ? { ...DEFAULT_PIN, verb } : DEFAULT_PIN;
-  // "<label>\t<url>" — same contract as the phrase-pin file, so statusline.sh
-  // can split and hand both halves to render_strip.
-  process.stdout.write(`${verbiagateDoneLabel(pin, elapsedSec * 1000)}\t${pin.url}\n`);
+  const [mode, a2, a3, a4] = process.argv.slice(2);
+  if (mode === 'spin') {
+    // spin <elapsedSec> <label> -> spun label (no url; statusline adds the link)
+    process.stdout.write(spin(a3 ?? '', parseInt(a2 ?? '0', 10)) + '\n');
+  } else if (mode === 'done') {
+    // done <durSec> [label] [url] -> "<rainbow label> for <dur>\t<url>"
+    const dur = fmtDuration(parseInt(a2 ?? '0', 10) * 1000);
+    if (a3) {
+      process.stdout.write(`${done(`${a3} for ${dur}`)}\t${a4 ?? ''}\n`);
+    } else {
+      // no item recorded — the default 10万ボルト drop
+      process.stdout.write(`${done(`${DEFAULT_PIN.icon} ${DEFAULT_PIN.verb} for ${dur}`)}\t${DEFAULT_PIN.url}\n`);
+    }
+  }
 }
 
-module.exports = { hslToRgb, rainbow, fmtDuration, verbiagateDoneLabel, DEFAULT_PIN };
+module.exports = { hslToRgb, graphemes, colorize, triangle, spin, done, fmtDuration, DEFAULT_PIN, END_RGB };

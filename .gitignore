@@ -7,3 +7,6 @@
 
 # stray screenshots
 resume-*.png
+
+# local TDD scratch — verification only, never shipped
+*.test.js

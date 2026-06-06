@@ -12,6 +12,7 @@ dir="${TMPDIR:-/tmp}/verbiagating"
 mkdir -p "$dir"
 rm -f "$dir/$sid.done"   # drop any lingering closeout from the previous turn
 rm -f "$dir/$sid.pin"    # drop any stale phrase-pin from the previous turn
+rm -f "$dir/$sid.last"   # drop the previous turn's spinning-item record
 date +%s > "$dir/$sid"
 
 # Phrase-pin: lowercase the prompt, pin the first phrases.tsv row whose phrase

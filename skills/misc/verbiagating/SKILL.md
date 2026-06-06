@@ -58,7 +58,7 @@ URL never shows). Wrap the label in an OSC 8 terminal hyperlink, using the **BEL
 - Never inject the skill's own name into a **wait** strip: **"verbiagating" (or any
   similar verbiage) must not appear in any tiered wait message.** It's the internal name
   of the feature, nothing more. **One sanctioned exception:** the post-turn *closeout*
-  line (see [Closeout](#closeout-v81--🌈-rainbow)) — its plain fallback is exactly
+  line (see [Spin & Closeout](#spin--closeout-v81--🌈-rainbow)) — its plain fallback is exactly
   `verbiagated for <Mm Ss>`, the name's only permitted appearance.
 
 ## Portable Rendering
@@ -176,31 +176,41 @@ idea. The user can also invoke it by mentioning **hadouken** (the phrase-pin, wh
 links the same gif); internally it's `KEN_*`. Label/url/mark are the `KEN_LABEL` /
 `KEN_URL` / `KEN_PCT` constants in `statusline.sh`.
 
-## Closeout (v8.1 — 🌈 RAINBOW)
+## Spin & Closeout (v8.1 — 🌈 RAINBOW)
 
-When a wait ends, the strip lingers a beat as a **closeout** drop before
-dismissing — the payoff after the wait. `turn-end.sh` records `<elapsed>
-<finished_epoch>` to `$TMPDIR/verbiagating/<sid>.done` for any wait past the 30s
-silent floor; `statusline.sh` holds the closeout for `CLOSEOUT_LINGER` seconds
-(the host's idle `refreshInterval` re-renders it across that window).
+The full-spectrum realization of the v7.7 INDIGO band: the wait strip **spins**
+while a turn is in flight, then **freezes** on completion. Both phases are
+truecolor and **grapheme-safe** — the gradient steps by grapheme cluster
+(`Intl.Segmenter`), never by code point, so an emoji + its variation selector
+(`⚡` + U+FE0F) stays one color unit instead of being split by an escape.
 
-The drop is the full-spectrum realization of the v7.7 INDIGO band: the closeout
-label renders as a **per-grapheme truecolor rainbow** (red→magenta), led by the
-🌈 zap, carried through `render_strip` so it keeps iconography + link + text:
+- **Spin (active wait).** Once an item is picked (pin/69/10万ボルト/Ken/tier),
+  `statusline.sh` paints it with an **INDIGO (270°) → MAGENTA band** that cycles
+  on elapsed (a ping-ponged offset), so the colors slide across the strip each
+  repaint — `node rainbow.js spin <elapsed> <label>`. Animation is bounded by the
+  host's `refreshInterval` (1s floor), so the spin is *stepped*, not smooth. The
+  bare `Nice.` nod is never spun. The picked `<label>\t<url>` is recorded to
+  `<sid>.last`.
+- **Closeout (freeze).** `turn-end.sh` snapshots `<sid>.last` into `<sid>.done`
+  (line 1 `<elapsed> <epoch>`, line 2 `<label>\t<url>`) for any wait past the 30s
+  floor. The closeout **freezes on the item that was actually spinning**, rendered
+  as the full red→magenta rainbow landing exactly on **#c594a9** —
+  `node rainbow.js done <dur> <label> <url>` → `<rainbow label> for <dur>\t<url>`,
+  fed through `render_strip` (keeps iconography + link + text). It holds for
+  `CLOSEOUT_LINGER` (until the next turn; capped), the host's idle
+  `refreshInterval` re-rendering it.
 
 ```
-🌈⚡️ 10万ボルトed for 3m 4s        # rainbow gradient, clickable (osc8) ↗
+spinning:  💃Breakdancing🕺            # indigo→magenta band, cycling
+frozen:    💃Breakdancing🕺 for 3m 4s  # full rainbow → #c594a9, clickable ↗
 ```
 
-- **Renderer:** `rainbow.js` (mirror: `rainbow.ts`) — `verbiagateDoneLabel(pin,
-  ms)` returns `rainbow(`${pin.icon} ${pin.verb} for <dur>`)`, and the CLI emits
-  `<label>\t<url>` (same contract as a phrase-pin) so `statusline.sh` can split
-  and feed both halves to `render_strip`. Default drop is the v8 `10万ボルト` pin.
-- **Grapheme-safe:** the gradient steps by grapheme cluster (`Intl.Segmenter`),
-  never by code point — so an emoji + its variation selector (`⚡` + U+FE0F) stays
-  one color unit instead of being split by an escape (which breaks presentation).
-- **Fallback:** no `node` (or no `rainbow.js`) → the plain `verbiagated for <Mm
-  Ss>` line. This is the lone sanctioned appearance of the skill's name.
+- **Renderer:** `rainbow.js` (mirror: `rainbow.ts`) exports `spin(text, elapsed)`
+  and `done(text)`; `END_RGB = [197,148,169]` is the #c594a9 terminal color. With
+  no recorded item the closeout falls back to the default v8 `10万ボルト` drop.
+- **Fallback:** no `node` (or no `rainbow.js`) → no spin, and the plain
+  `verbiagated for <Mm Ss>` closeout. This is the lone sanctioned appearance of
+  the skill's name.
 
 ## Pi Wiring
 
