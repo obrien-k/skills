@@ -100,7 +100,7 @@ into it — that keeps the core string portable.
 
 ### Light — 30–99 sec
 - `💃Breakdancing🕺` → https://www.youtube.com/watch?v=Hr95rKEYT5E
-- `💅Bump a bitch.. just kiddin🖕` — playwright vibes: click a button, nudge the mouse, tab through, check screen reader
+- `💅Bump a bitch.. just kiddin🖕` — playwright vibes: click a button, nudge the mouse, tab through, check screen reader // @atgreen TODO
 - `🎉🤖 Elliot shipped — v1.0!` — cameo: Mr. Robot just graduated to `engineering/`. He doesn't know what the fuss is about.
 
 ### Medium — 1–10 min
