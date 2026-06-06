@@ -149,7 +149,13 @@ elif [ -n "$session_id" ] && [ -f "$done_file" ]; then
   : "${done_epoch:=0}"; : "${done_elapsed:=0}"
   if [ $(( $(date +%s) - done_epoch )) -lt "$CLOSEOUT_LINGER" ]; then
     if command -v node >/dev/null 2>&1 && [ -f "$VG_HOME/rainbow.js" ]; then
-      strip=$(node "$VG_HOME/rainbow.js" "$done_elapsed" 2>/dev/null)
+      # rainbow.js emits "<rainbowed icon+verbed label>\t<url>" — split and run it
+      # through render_strip so the closeout carries iconography + link + text.
+      done_line=$(node "$VG_HOME/rainbow.js" "$done_elapsed" 2>/dev/null)
+      IFS=$'\t' read -r done_label done_url <<EOF
+$done_line
+EOF
+      [ -n "${done_label:-}" ] && strip=$(render_strip "$done_label" "${done_url:-}" "$mode")
     fi
     [ -z "$strip" ] && strip="verbiagated for $(fmt_dur "$done_elapsed")"
   fi

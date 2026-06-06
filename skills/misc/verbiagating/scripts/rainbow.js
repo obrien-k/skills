@@ -1,6 +1,11 @@
 'use strict';
 
-const DEFAULT_PIN = { icon: '⚡️', phrase: '10万ボルト', verb: '10万ボルトed' };
+const DEFAULT_PIN = {
+  icon: '⚡️',
+  phrase: '10万ボルト',
+  verb: '10万ボルトed',
+  url: 'https://www.youtube.com/watch?v=5QzEoWeybp4',
+};
 
 function hslToRgb(h, s, l) {
   const a = s * Math.min(l, 1 - l);
@@ -34,15 +39,20 @@ function fmtDuration(ms) {
   return parts.join(' ');
 }
 
+// Leads with the pin's iconography, then the verbed phrase + duration — the
+// whole run rainbowed. The link rides alongside (emitted by the CLI as a second
+// TSV field), so the closeout can fuse iconography + link + text via render_strip.
 function verbiagateDoneLabel(pin = DEFAULT_PIN, durationMs) {
-  return rainbow(`${pin.verb} for ${fmtDuration(durationMs)}`);
+  return rainbow(`${pin.icon} ${pin.verb} for ${fmtDuration(durationMs)}`);
 }
 
 if (require.main === module) {
   const elapsedSec = parseInt(process.argv[2] ?? '0', 10);
   const verb = process.argv[3];
   const pin = verb ? { ...DEFAULT_PIN, verb } : DEFAULT_PIN;
-  process.stdout.write(verbiagateDoneLabel(pin, elapsedSec * 1000) + '\n');
+  // "<label>\t<url>" — same contract as the phrase-pin file, so statusline.sh
+  // can split and hand both halves to render_strip.
+  process.stdout.write(`${verbiagateDoneLabel(pin, elapsedSec * 1000)}\t${pin.url}\n`);
 }
 
 module.exports = { hslToRgb, rainbow, fmtDuration, verbiagateDoneLabel, DEFAULT_PIN };
