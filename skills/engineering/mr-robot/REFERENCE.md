@@ -133,6 +133,25 @@ git rm --cached <file>
 - Only add to repo `.gitignore` when that's the team convention (committed change — branch/PR on protected repos)
 - `.DS_Store` regenerates the instant Finder touches a folder — ignore *first*, then sweep; do both repos in one pass (API + UI clone both collect it)
 
+### Local-only *persistent* files (handoffs, resume notes) 📌
+
+<!-- //todo: turn this into an enforced guard — a "pause/handoff" routine that (a) refuses to
+     write resume docs under /tmp|$TMPDIR, (b) relocates them into the repo as a dotfile, and
+     (c) appends to .git/info/exclude + verifies `git status` doesn't list them, before reporting "paused safe". -->
+
+A handoff/resume doc must outlive a reboot but must **never** enter commit history. `/tmp` and `$TMPDIR` are wiped on macOS boot — the worst possible time to lose a resume doc.
+
+```bash
+# Persist a handoff so it survives reboot yet never lands in history:
+mv /tmp/handoff.md <repo>/.handoff-<topic>.md                 # dotfile → Jekyll/static builders ignore it
+printf '\n# local-only resume handoff (never commit)\n.handoff-<topic>.md\n' >> <repo>/.git/info/exclude
+git status --short                                             # MUST NOT list the handoff
+```
+
+- `.git/info/exclude` = the per-clone "gitexclude": ignores like `.gitignore` but is **itself untracked**, so the rule never reaches commit history (and `git add -A` won't pick the file up).
+- Distinct from global ignore above: global ignore is for *disposable* cruft; this is for files you want to *keep and reference* locally.
+- Plan files under `~/.claude/plans/` already persist (home dir, not temp) — safe there; it's the `/tmp` handoff that needs relocating.
+
 ## Phase 3 — Version Tagging
 
 - Detect first (see SKILL table). Skip entirely if release tooling is present.
@@ -174,3 +193,23 @@ git log --oneline <prev-tag>..<new-tag>
 - Worth tracking: live-but-incomplete features — a route returning bare `{}`, a model with no write path. Not broken, just unfinished.
 - File issues only with explicit user authorization; otherwise note in memory.
 - Retrospective by nature — finds gaps in existing code. Starting fresh? Use [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) instead.
+
+## Phase 7 — Docs Rundown
+
+The README is the navigation hub. Run a docs-coherence pass before declaring a repo clean / before TDD.
+
+### Find before you write — docs may be stranded
+
+Canonical docs often live on the default branch while feature code lives on `develop`; a doc you're about to "create" may already exist there. Always `git show <default>:docs/...` and search issues/PRs **before minting a new spec** — a fresh number off the wrong branch duplicates the doc and collides numbering. (Learned the hard way: a duplicate PRD-01 + a colliding ADR-0002 authored off `develop` because the originals were stranded on `main`.)
+
+### Cross-reference both ways
+
+PRDs cite the ADRs that decide them; ADRs cite the PRD they serve; both cite the implementing issues/PRs. The latest PRD should reference every ADR in its orbit; back-fill older PRDs that gained an ADR later. Dangling or one-directional links are a finding.
+
+### Numbering discipline
+
+Confirm the PRD/ADR numbering owner and existing sequence before adding. Reserved-but-unwritten numbers (an ADR referenced by an issue but not yet filed) still count as taken.
+
+### Record decisions, map to code, descend
+
+Anything *decided* in the sweep (versioning, allowed merge style, migration/scoring approach) → an ADR; a new capability → a PRD. Pin ambiguous spec as executable interpretation and flag it, rather than leaving it implicit. A good PRD is a decision-tree into *existing* testable worktrees, not greenfield prose — note where each concept already lives in code, then hand the slice to [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) for the red-green descent. The end-of-sweep trio: [`/doc-coauthoring`](https://github.com/anthropics/skills) (authoring), [`/grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-with-docs/SKILL.md) (stress-test vs the domain model), [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) (descend to tests). Keep specs lean; don't spec-hell.

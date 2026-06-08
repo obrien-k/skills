@@ -73,6 +73,8 @@ Then run [`/grill-me`](https://github.com/mattpocock/skills/blob/main/skills/pro
 
 6. **OS/editor cruft — sweep + ignore, never commit.** Delete only **untracked** junk (`.DS_Store`, `Thumbs.db`, `*.swp`, `.idea/`, `.vscode/`); if already tracked, `git rm --cached` it. Prefer global ignore (`~/.config/git/ignore`) over repo `.gitignore` for personal OS cruft. → [cruft recipes](REFERENCE.md)
 
+7. **Local-only files that must *persist* — `.git/info/exclude`, never `/tmp`.** <!-- //todo: wire a pre-handoff guard that refuses /tmp and verifies the exclude entry before declaring a session "paused safe" --> Resume/handoff docs and working notes that must survive a reboot but never enter commit history go **in the repo** + `.git/info/exclude` (the per-clone exclude, itself never committed) — name them dotfiles (`.handoff-<topic>.md`) so static-site builders ignore them. **Never stash them in `/tmp`/`$TMPDIR`** — macOS wipes those on reboot, exactly when the resume doc is needed. (Learned the hard way: a handoff written to `/tmp` right before a user reboot would have vanished on boot.) → [local-only persistent files](REFERENCE.md)
+
 ### Phase 3 — Version Tags 🏷️
 
 Detect before acting:
@@ -104,6 +106,16 @@ Group commits per version range thematically — [Keep a Changelog](https://keep
 ### Phase 6 — Stub Tracking 🌱
 
 Surface dedicated tracking files first (`TODO.md`, `FIXME.md`, `NOTES.md`), then grep language-agnostic markers (`TODO`/`FIXME`/`HACK`, not-implemented throws, HTTP 501). For each stub: last commit, current behavior, what's missing. File issues only with the user's confirmation — don't publish unprompted.
+
+### Phase 7 — Docs Rundown 🏮
+
+**The README is the lamp-post.** Before declaring a repo clean — and before any TDD / new implementation — ask of every notable feature or decision: **"Has this been documented (issue, PRD, ADR)?"** Undocumented work is invisible work.
+
+- **Find before you write** — the doc may already exist, possibly stranded on another branch; search first, don't duplicate or collide numbering.
+- **Cross-reference both ways** (PRD↔ADR↔issue) and **record decisions** as ADRs/PRDs, not just features.
+- **Map docs→code, then descend** — hand documented slices to [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md); escalate gaps to [`/doc-coauthoring`](https://github.com/anthropics/skills) or [`/grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-with-docs/SKILL.md). Keep specs lean.
+
+Recipes + the stranded-docs/numbering/cross-ref lessons live in [REFERENCE.md](REFERENCE.md). File/PR docs changes only with the user's confirmation, same as Phase 6.
 
 ---
 
