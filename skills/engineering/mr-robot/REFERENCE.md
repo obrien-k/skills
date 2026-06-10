@@ -135,14 +135,16 @@ git rm --cached <file>
 
 ### Local-only *persistent* files (handoffs, resume notes) 📌
 
-<!-- //todo: turn this into an enforced guard — a "pause/handoff" routine that (a) refuses to
-     write resume docs under /tmp|$TMPDIR, (b) relocates them into the repo as a dotfile, and
-     (c) appends to .git/info/exclude + verifies `git status` doesn't list them, before reporting "paused safe". -->
-
 A handoff/resume doc must outlive a reboot but must **never** enter commit history. `/tmp` and `$TMPDIR` are wiped on macOS boot — the worst possible time to lose a resume doc.
 
+The enforced guard — [`scripts/pause-handoff.sh`](scripts/pause-handoff.sh) — does this safely: it (a) refuses to persist under `/tmp`/`$TMPDIR`, (b) relocates the draft into the repo as a dotfile, and (c) appends the per-clone `.git/info/exclude` entry, then verifies git neither tracks nor surfaces the file before reporting "paused safe".
+
 ```bash
-# Persist a handoff so it survives reboot yet never lands in history:
+# Scripted (preferred) — run from inside the target repo, or set MR_ROBOT_REPO=<repo-root>:
+scripts/pause-handoff.sh <topic> /tmp/handoff.md   # relocate an existing draft
+some-generator | scripts/pause-handoff.sh <topic>  # or read the body from stdin
+
+# Manual equivalent, if you can't reach the script:
 mv /tmp/handoff.md <repo>/.handoff-<topic>.md                 # dotfile → Jekyll/static builders ignore it
 printf '\n# local-only resume handoff (never commit)\n.handoff-<topic>.md\n' >> <repo>/.git/info/exclude
 git status --short                                             # MUST NOT list the handoff
