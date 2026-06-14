@@ -39,8 +39,13 @@ Confirm you're allowed to touch this repo before anything destructive — the wo
 - **No push rights, or the owner isn't you / your org / your fork** → HARD STOP; offer read-only observations only. Activity, stars, and recency are never authorization — ownership is.
 - **Non-GitHub host** (GitLab, Bitbucket, self-hosted) → local-git phases work unchanged; use that host's CLI/API for push-rights, PRs, and remote deletes, or confirm with the user. Never read an empty `gh` result as "no access."
 - **Push rights confirmed** → proceed, and use the resolved remote name (not `origin`) for every later command.
+- **Repo going private soon** → surface-migration gate: before any housekeeping, ask what public-facing content (wiki, docs, Docusaurus sites, external links) needs to move to a public repo *before* the switch. Identify broken external references that will result. Resolve the migration first — branch cleanup on a repo that's about to go private is the wrong priority. (Learned: wiki content was duplicated between a private-bound repo and a public one; the right move was to stub the private copy and declare the public repo canonical *before* touching anything else.)
 
 ### Phase 1 — Grill 🌸
+
+**Read context before grilling — hard step.** Before any surface reads or project-type questions, scan all in-scope repos for `CONTEXT.md`, `docs/CONTEXT.md`, `handoff.md`, `.handoff-*.md`, and open issues. Read them. Synthesize what's in-flight: active branches with pending work, decisions made, immediate next steps, cross-repo dependencies. This is the difference between sweeping the right repo and sweeping the wrong one. (Learned the hard way: jumped straight to branch cleanup on an API repo while the user's actual priority was a different in-flight feature branch — had to back out and restart after reading the CONTEXT.md that spelled it out.) If in-flight work is present, surface it to the user and confirm scope before proceeding.
+
+**Cross-repo context diff.** When multiple repos are in scope, compare their CONTEXT.md files. Milestones, decisions, and open questions should stay consistent across repos that share an integration. Flag mismatches — a decision recorded in one repo's CONTEXT but missing from its sibling's is a documentation debt to resolve in Phase 7.
 
 **Project-type gate (ask before traversing).** Do a minimal surface read — last commit date, branch count, open PR count — then ask plainly:
 
@@ -113,6 +118,7 @@ Surface dedicated tracking files first (`TODO.md`, `FIXME.md`, `NOTES.md`), then
 
 - **Find before you write** — the doc may already exist, possibly stranded on another branch; search first, don't duplicate or collide numbering.
 - **Cross-reference both ways** (PRD↔ADR↔issue) and **record decisions** as ADRs/PRDs, not just features.
+- **Canonical content source check.** When the same content (wiki, docs, a Docusaurus site) appears in multiple repos, confirm which is canonical and which is a stale mirror. The non-canonical copy should be stubbed with a redirect/README pointing at the source of truth — not left as a silent duplicate that will drift. Flag repos where a wiki or docs dir has become orphaned from its canonical home.
 - **Map docs→code, then descend** — hand documented slices to [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md); escalate gaps to [`/doc-coauthoring`](https://github.com/anthropics/skills) or [`/grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-with-docs/SKILL.md). Keep specs lean.
 
 Recipes + the stranded-docs/numbering/cross-ref lessons live in [REFERENCE.md](REFERENCE.md). File/PR docs changes only with the user's confirmation, same as Phase 6.
