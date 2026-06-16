@@ -34,10 +34,7 @@ Principles, not a script. Resolve the actual remote name, host, and branch from 
 **Scope repos first.** Ask which repos are in scope — paired repos (API + UI, fork + upstream, a microservice cluster) drift in lockstep. If the user names one repo of an obvious pair, ask whether the sibling needs the same sweep.
 
 - **Repo going private soon** → migration gate first: identify public-facing content (wiki, docs, Docusaurus sites) that must move to a public repo before the switch. Resolve the migration before any housekeeping.
-- **No remote** → LOCAL-ONLY mode: skip all remote ops.
-- **No push rights or not your org/fork** → HARD STOP; read-only observations only.
-- **Non-GitHub host** → local-git phases work unchanged; use that host's CLI/API for remote ops.
-- **Push rights confirmed** → proceed with the resolved remote name.
+- **Resolve the Sweep Context, then branch on the Ownership Gate.** Run `scripts/resolve-context.sh` once (recipe + verdict table in [REFERENCE.md §Phase 0](REFERENCE.md)); it emits `RC_MODE` (`local-only` / `proceed` / `hard-stop` / `needs-confirm`) plus `RC_REMOTE` / `RC_HOST` / `RC_OWNER` / `RC_REPO` / `RC_DEFAULT`. Every later phase consumes that context — never re-resolve the remote or default branch by hand. The gate is **fail-closed**: only `proceed` greenlights remote ops.
 
 ### Phase 1 — Grill 🌸
 
@@ -52,7 +49,7 @@ Principles, not a script. Resolve the actual remote name, host, and branch from 
 
 Detect and respect:
 
-- **Default branch** — query it, never assume. Protected set = default + `develop` + `staging` + open-PR branches + release/tracking branches.
+- **Default branch** — already in `$RC_DEFAULT` from the Sweep Context (Phase 0); don't re-query. Protected set = `$RC_DEFAULT` + `develop` + `staging` + open-PR branches + release/tracking branches (assembled here — it carries judgment, so it stays out of the resolver).
 - **Merge style** — query allowed methods and `required_linear_history`; match the repo. → [linear-history edge cases](REFERENCE.md)
 - **Bot/generated repo** (>80% bot commits) → ask if the real source is elsewhere; skip tags + CHANGELOG.
 - **Release automation** (`.releaserc`, `.goreleaser`, `release-please`) → skip Phases 3 and 5.
