@@ -46,7 +46,7 @@ Keep as a single issue when:
 
 ### 4. File the GitHub issue(s)
 
-Create issues with `gh issue create`. Do NOT ask the user to review first — just file and share URLs.
+Create issues with `gh issue create --repo "$REPO"` (set `REPO` to your fork's `owner/repo`, or run `gh repo set-default` once per clone — without it, `gh` files to the upstream parent in a fork). Do NOT ask the user to review first — just file and share URLs.
 
 Issues must be **durable** — they should still make sense after major refactors. Write from the user's perspective.
 
