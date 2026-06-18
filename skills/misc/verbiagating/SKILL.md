@@ -191,14 +191,22 @@ truecolor and **grapheme-safe** — the gradient steps by grapheme cluster
   host's `refreshInterval` (1s floor), so the spin is *stepped*, not smooth. The
   bare `Nice.` nod is never spun. The picked `<label>\t<url>` is recorded to
   `<sid>.last`.
-- **Closeout (freeze).** `turn-end.sh` snapshots `<sid>.last` into `<sid>.done`
+- **Closeout (freeze).** `turn-end.sh` snapshots the spinning item into `<sid>.done`
   (line 1 `<elapsed> <epoch>`, line 2 `<label>\t<url>`) for any wait past the 30s
-  floor. The closeout **freezes on the item that was actually spinning**, rendered
-  as the full red→magenta rainbow landing exactly on **#c594a9** —
-  `node rainbow.js done <dur> <label> <url>` → `<rainbow label> for <dur>\t<url>`,
-  fed through `render_strip` (keeps iconography + link + text). It holds for
-  `CLOSEOUT_LINGER` (until the next turn; capped), the host's idle
-  `refreshInterval` re-rendering it.
+  floor — preferring `<sid>.last` (what actually spun), then `<sid>.pin` (an explicit
+  phrase-pin that survives even if no refresh captured it). The closeout **freezes on
+  the item that was actually spinning**, rendered as the full red→magenta rainbow
+  landing exactly on **#c594a9** — `node rainbow.js done <dur> <label> <url>` →
+  `<rainbow label> for <dur>\t<url>`, fed through `render_strip` (keeps iconography +
+  link + text). It holds for `CLOSEOUT_LINGER` (until the next turn; capped), the
+  host's idle `refreshInterval` re-rendering it.
+- **Quiet-turn reconstruction.** If neither `.last` nor `.pin` was written (the
+  statusLine never refreshed past the silent floor, so nothing recorded the item),
+  line 2 is empty and the closeout **reconstructs the tiered pick deterministically**
+  rather than dropping to the default. Both the active pick and the reconstruction key
+  the same `cksum`-mod selection on `session:tier:start-epoch` (`start-epoch ==
+  finish-epoch − elapsed`), so they land on the identical corpus row — the closeout
+  still freezes on the run's actual verb. Shared by `pick_corpus()`.
 
 ```
 spinning:  💃Breakdancing🕺            # indigo→magenta band, cycling
@@ -206,8 +214,10 @@ frozen:    💃Breakdancing🕺 for 3m 4s  # full rainbow → #c594a9, clickable
 ```
 
 - **Renderer:** `rainbow.js` (mirror: `rainbow.ts`) exports `spin(text, elapsed)`
-  and `done(text)`; `END_RGB = [197,148,169]` is the #c594a9 terminal color. With
-  no recorded item the closeout falls back to the default v8 `10万ボルト` drop.
+  and `done(text)`; `END_RGB = [197,148,169]` is the #c594a9 terminal color. The
+  default v8 `10万ボルト` drop is now only the last-ditch fallback — reached when the
+  reconstruction also yields nothing (e.g. an empty/missing corpus tier), not on
+  every quiet turn.
 - **Fallback:** no `node` (or no `rainbow.js`) → no spin, and the plain
   `verbiagated for <Mm Ss>` closeout. This is the lone sanctioned appearance of
   the skill's name.

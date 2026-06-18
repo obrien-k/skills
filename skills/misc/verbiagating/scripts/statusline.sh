@@ -49,6 +49,26 @@ fmt_dur() {
   if [ "$s" -ge 60 ]; then printf '%dm %ds' "$((s/60))" "$((s%60))"; else printf '%ds' "$s"; fi
 }
 
+# pick_corpus <tier> <key> <corpus_file> -> echoes "<label>\t<url>" for the row
+# deterministically chosen among <corpus_file> rows of <tier> (cksum of <key> %
+# count). Empty if the file or tier has no rows. Same key in the active wait and
+# the closeout reconstruction => both land on the identical item, no drift.
+pick_corpus() {
+  local tier="$1" key="$2" file="$3" t label url
+  [ -f "$file" ] || return
+  local labels=() urls=()
+  while IFS=$'\t' read -r t label url; do
+    [ "$t" = "$tier" ] || continue
+    labels+=("$label"); urls+=("$url")
+  done < "$file"
+  local n=${#labels[@]}
+  [ "$n" -gt 0 ] || return
+  local h idx
+  h=$(printf '%s' "$key" | cksum | cut -d' ' -f1)
+  idx=$(( h % n ))
+  printf '%s\t%s' "${labels[$idx]}" "${urls[$idx]}"
+}
+
 # render_strip <label> <url> <mode> -> echoes the strip string (no host styling)
 render_strip() {
   local label="$1" url="$2" mode="$3"
@@ -141,23 +161,17 @@ if [ "$elapsed" -ge 0 ]; then
     picked_label="$KEN_LABEL"; picked_url="$KEN_URL"
   fi
 
-  # 4) Normal tiered item, held stable for the whole turn.
+  # 4) Normal tiered item, held stable for the whole turn. Deterministic pick keyed
+  #    on session+tier+turn: stable across the turn's refreshes (no flicker), fresh
+  #    on the next turn. No extra state writes. The closeout reconstructs the same
+  #    key (start_val == finish - elapsed) so it freezes on this exact item.
   if [ -z "$picked_label" ] && [ -z "$bare" ]; then
     tier=$(select_tier "$elapsed" "$ctx_pct")
-    if [ "$tier" != "silent" ] && [ -f "$CORPUS" ]; then
-      labels=(); urls=()
-      while IFS=$'\t' read -r t label url; do
-        [ "$t" = "$tier" ] || continue
-        labels+=("$label"); urls+=("$url")
-      done < "$CORPUS"
-      n=${#labels[@]}
-      if [ "$n" -gt 0 ]; then
-        # Deterministic pick keyed on session+tier+turn: stable across the turn's
-        # refreshes (no flicker), fresh on the next turn. No extra state writes.
-        h=$(printf '%s' "${session_id}:${tier}:${start_val}" | cksum | cut -d' ' -f1)
-        idx=$(( h % n ))
-        picked_label="${labels[$idx]}"; picked_url="${urls[$idx]}"
-      fi
+    if [ "$tier" != "silent" ]; then
+      picked=$(pick_corpus "$tier" "${session_id}:${tier}:${start_val}" "$CORPUS")
+      IFS=$'\t' read -r picked_label picked_url <<EOF
+$picked
+EOF
     fi
   fi
 
@@ -181,6 +195,20 @@ elif [ -n "$session_id" ] && [ -f "$done_file" ]; then
   done_elapsed=0; done_epoch=0; done_label=""; done_url=""
   { read -r done_elapsed done_epoch; IFS=$'\t' read -r done_label done_url; } < "$done_file" 2>/dev/null || true
   : "${done_epoch:=0}"; : "${done_elapsed:=0}"
+  # No item was captured during the turn (the statusLine never refreshed past the
+  # silent floor, so nothing wrote .last and turn-end found no pin to fall back to).
+  # Reconstruct the tiered pick deterministically rather than dropping to the
+  # default: the active branch keyed on session+tier+start_epoch, and start_epoch
+  # == finish_epoch - elapsed, so the same key reproduces the turn's actual item.
+  if [ -z "${done_label:-}" ]; then
+    rebuilt_tier=$(select_tier "$done_elapsed" "$ctx_pct")
+    if [ "$rebuilt_tier" != "silent" ]; then
+      rebuilt=$(pick_corpus "$rebuilt_tier" "${session_id}:${rebuilt_tier}:$(( done_epoch - done_elapsed ))" "$CORPUS")
+      IFS=$'\t' read -r done_label done_url <<EOF
+$rebuilt
+EOF
+    fi
+  fi
   if [ $(( $(date +%s) - done_epoch )) -lt "$CLOSEOUT_LINGER" ]; then
     if command -v node >/dev/null 2>&1 && [ -f "$VG_HOME/rainbow.js" ]; then
       # "done <dur> [label] [url]" → "<rainbow label> for <dur>\t<url>" (empty
