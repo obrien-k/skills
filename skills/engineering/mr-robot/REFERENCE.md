@@ -4,35 +4,32 @@ Command recipes and the lessons behind each rule. SKILL.md carries the principle
 
 Sources: founding session (orphic-inc/stellar-api, 2026-05-31) and a battle-testing pass across a 24-repo `~/git/` folder (third-party clones, no-remote repos, a 59-branch graveyard, `gh`-named remotes, duplicate clones).
 
-## Phase 0 — Ownership Gate
+## Phase 0 — Sweep Context + the Ownership Gate
 
-The single most important guard. Most failure modes are fail-*open* (acting on a repo you shouldn't).
+The single most important guard. Most failure modes are fail-*open* (acting on a repo you shouldn't). Resolve it **once** with [`scripts/resolve-context.sh`](scripts/resolve-context.sh) — a read-only resolver that emits the **Sweep Context** (the resolved facts every later phase consumes) with the **Ownership Gate** verdict in its `RC_MODE` field. Don't re-derive `$RC_REMOTE`/`$RC_DEFAULT` per phase; source it here and reuse.
 
 ```bash
-# Resolve the remote BY NAME — never assume "origin". gh-cloned repos and forks
-# use other names (gh, upstream). A hardcoded `origin` check silently fails open:
-# a repo whose remote is named `gh` was misread as "no remote" → LOCAL-ONLY → swept.
-REMOTE=$(git remote | grep -qx origin && echo origin || git remote | head -1)
-URL=$(git remote get-url "$REMOTE" 2>/dev/null)
-
-OWNER=$(printf '%s' "$URL" | sed -E 's#(git@[^:]+:|https?://[^/]+/)##; s#/?\.git$##; s#/.*##')
-REPO=$(basename "$URL" .git)
-PUSH=$(gh api "repos/$OWNER/$REPO" --jq '.permissions.push' 2>/dev/null)
+eval "$(scripts/resolve-context.sh)"   # → RC_MODE RC_REMOTE RC_HOST RC_OWNER RC_REPO RC_DEFAULT
+# (or MR_ROBOT_REPO=<repo-root> scripts/resolve-context.sh to resolve a repo you're not cd'd into)
 ```
 
-- **No remote at all** → LOCAL-ONLY mode. The repo is yours by definition but has nowhere to push: clean local branches, skip remote deletes / fork sync / pushes.
-- **No push rights, or owner isn't you/your org/your fork** → HARD STOP. Activity, stars, recency are never authorization — ownership is.
-- **Non-GitHub host** (parse host from `$URL`) → `gh api` doesn't apply. The local-git phases work unchanged; use the forge's CLI (`glab` for GitLab) for push-rights/PRs/remote-deletes, or confirm ownership with the user. Never read an empty `gh` result as "no access" — that fails closed on your own repo.
+The resolver is **strictly read-only** (git reads + `gh api` GETs, never a mutation) — safe to run anytime; that read-only property is also how it's verified, absent a test runner in this repo. It resolves the remote **by name** — never assumes `origin`. A gh-cloned repo or fork uses other names (`gh`, `upstream`); a hardcoded `origin` check silently fails open (a repo whose remote is named `gh` was misread as "no remote" → LOCAL-ONLY → swept).
+
+**Ownership Gate verdicts (`RC_MODE`) — fail-closed: anything not positively confirmed yours-and-pushable is NOT `proceed`.**
+
+| `RC_MODE` | Signal | Mr. Robot does |
+|---|---|---|
+| `local-only` | no remote — yours by definition, nowhere to push | clean local branches; skip remote deletes / fork sync / pushes |
+| `proceed` | GitHub host, `permissions.push == true` | full treatment, using `$RC_REMOTE` |
+| `hard-stop` | GitHub, push false / empty / API-error, or unparseable host | read-only observations only — activity, stars, recency are never authorization; ownership is |
+| `needs-confirm` | non-GitHub host (`$RC_HOST`) | `gh api` doesn't apply; use that forge's CLI (`glab` for GitLab) or confirm ownership with the user, then proceed |
 
 ## Phase 1 — Architecture Detection
 
 Prefer local git (offline, no auth); reach for the host API only for remote-only signal.
 
 ```bash
-# Default branch — try remote HEAD, then API, then current branch. Never assume main.
-DEFAULT=$(git symbolic-ref --short "refs/remotes/$REMOTE/HEAD" 2>/dev/null | sed "s#$REMOTE/##") \
-  || DEFAULT=$(gh api "repos/$OWNER/$REPO" --jq '.default_branch' 2>/dev/null) \
-  || DEFAULT=$(git branch --show-current)
+# Default branch already resolved into $RC_DEFAULT by the Sweep Context (Phase 0).
 
 # Bot/generated repo (>80% bot commits → build artifact, source is elsewhere)
 git log -20 --format='%s' | grep -c "^\[bot\]\|^chore(release)\|^Merge pull request"
@@ -49,7 +46,7 @@ git tag | head
 git log -1 --format=%cr
 ```
 
-- **Protected branch set** = `$DEFAULT` + `develop` + `staging` + open-PR branches + long-lived release branches (`3.x`, `release-7x`) + tracking branches (`upstream`, `vendor`). Build this once; every deletion phase excludes it.
+- **Protected branch set** = `$RC_DEFAULT` + `develop` + `staging` + open-PR branches + long-lived release branches (`3.x`, `release-7x`) + tracking branches (`upstream`, `vendor`). Assemble it once from the Sweep Context (kept out of the resolver — it carries judgment); every deletion phase excludes it.
 - Don't overlay semver on a milestone/build tag scheme — it's correct for embedded/hardware/event repos.
 
 ### Merge style + linear-history 🔀
@@ -75,17 +72,17 @@ gh api repos/{owner}/{repo}/branches/{default}/protection \
 git fetch -p   # prune stale remote-tracking refs FIRST, always
 
 # Remote deletes via host API — git push --delete hits org branch-protection / token walls
-gh api -X DELETE "repos/$OWNER/$REPO/git/refs/heads/<branch>"
+gh api -X DELETE "repos/$RC_OWNER/$RC_REPO/git/refs/heads/<branch>"
 
 # Local: MERGED ONLY. -d refuses unmerged; blanket -D destroys it silently.
-git branch --merged "$DEFAULT" | grep -vE "^\*|^  ($DEFAULT|develop|staging)$" \
+git branch --merged "$RC_DEFAULT" | grep -vE "^\*|^  ($RC_DEFAULT|develop|staging)$" \
   | sed 's/^ *//' | xargs -r git branch -d
 
 git branch --no-merged   # list these; force-delete only what the user confirms, one at a time
 ```
 
 - **Never blanket `git branch -D`.** A graveyard repo hides unmerged work — one test repo had 56 unmerged feature branches that `-D` would have erased.
-- `git branch --merged` with no ref checks against *current HEAD*, not `$DEFAULT` — always pass `$DEFAULT` explicitly.
+- `git branch --merged` with no ref checks against *current HEAD*, not `$RC_DEFAULT` — always pass `$RC_DEFAULT` explicitly.
 - Check open PRs before deleting: `gh pr list --state open --json headRefName`.
 
 ### Author-owned content patterns ✍️
@@ -170,9 +167,9 @@ Forks only. Guard before touching anything:
 git remote | grep -qx upstream || echo "no upstream — not a fork, skip Phase 4"
 [ -z "$(git status --porcelain)" ] || echo "dirty tree — stash or commit first"
 
-git log "$DEFAULT"...upstream/"$DEFAULT" --left-right   # < fork-only, > upstream-only
-git checkout "$DEFAULT" && git merge --ff-only upstream/"$DEFAULT"
-git fetch upstream --tags && git push "$REMOTE" --tags   # tags don't sync automatically
+git log "$RC_DEFAULT"...upstream/"$RC_DEFAULT" --left-right   # < fork-only, > upstream-only
+git checkout "$RC_DEFAULT" && git merge --ff-only upstream/"$RC_DEFAULT"
+git fetch upstream --tags && git push "$RC_REMOTE" --tags   # tags don't sync automatically
 ```
 
 - **Refuse on a dirty tree** — `checkout`/`merge` carry or clobber uncommitted work.

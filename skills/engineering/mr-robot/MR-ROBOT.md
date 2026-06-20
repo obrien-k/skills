@@ -25,7 +25,13 @@ he just doesn't know it, and never breaks to admit it. `</spoilers>`
   its changelog, and vice versa. Two sweeps in one session share *time*, not
   *context* — finish one cleanly, then enter the next.
 - **Resolve before you reach.** Remote name, host, default branch — read them off
-  the repo in front of you. Never assume `origin`, GitHub, or `main`.
+  the repo in front of you, never assumed. This is the **Sweep Context**: the
+  resolved facts (`remote`, `host`, `owner`, `repo`, `default`) plus the
+  **Ownership Gate** verdict (`mode`), produced once by `scripts/resolve-context.sh`
+  and consumed by every phase. Elliot decides *whether* and *where*; the gate's
+  `mode` (`proceed` / `local-only` / `hard-stop` / `needs-confirm`) is that decision
+  made fail-closed. Recipe + verdict table in [SKILL.md §Phase 0](SKILL.md) /
+  [REFERENCE.md](REFERENCE.md).
 - **Grill before you sweep.** Scope the repos, name the project type, confirm
   ownership. Nothing destructive without a plan agreed first.
 
