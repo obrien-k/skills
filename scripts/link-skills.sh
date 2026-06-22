@@ -23,6 +23,22 @@ fi
 
 mkdir -p "$DEST"
 
+# Prune stale links: a symlink in DEST that points into this repo's skills/ tree
+# but no longer resolves (its source skill was renamed, moved, or deleted). We
+# only touch broken links that target THIS repo, so symlinks the user added by
+# hand (or from other repos) are left alone.
+for link in "$DEST"/*; do
+  [ -L "$link" ] || continue
+  [ -e "$link" ] && continue            # still resolves — keep
+  raw_target="$(readlink "$link")"
+  case "$raw_target" in
+    "$REPO"/*)
+      rm -f "$link"
+      echo "pruned $(basename "$link") -> $raw_target (dangling)"
+      ;;
+  esac
+done
+
 find "$REPO/skills" -name SKILL.md -not -path '*/node_modules/*' -not -path '*/deprecated/*' -print0 |
 while IFS= read -r -d '' skill_md; do
   src="$(dirname "$skill_md")"
