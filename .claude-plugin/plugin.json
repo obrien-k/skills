@@ -18,7 +18,6 @@
     "./skills/productivity/grilling",
     "./skills/productivity/handoff",
     "./skills/productivity/teach",
-    "./skills/productivity/writing-great-skills",
-    "./skills/misc/verbiagating"
+    "./skills/productivity/writing-great-skills"
   ]
 }
