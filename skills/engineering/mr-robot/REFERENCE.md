@@ -212,3 +212,31 @@ Confirm the PRD/ADR numbering owner and existing sequence before adding. Reserve
 ### Record decisions, map to code, descend
 
 Anything *decided* in the sweep (versioning, allowed merge style, migration/scoring approach) → an ADR; a new capability → a PRD. Pin ambiguous spec as executable interpretation and flag it, rather than leaving it implicit. A good PRD is a decision-tree into *existing* testable worktrees, not greenfield prose — note where each concept already lives in code, then hand the slice to [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) for the red-green descent. The end-of-sweep trio: [`/doc-coauthoring`](https://github.com/anthropics/skills) (authoring), [`/grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-with-docs/SKILL.md) (stress-test vs the domain model), [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) (descend to tests). Keep specs lean; don't spec-hell.
+
+## Phase 8 — Doc Topology & Community Standards
+
+The end-game phase. Phase 7 made sure each feature is documented *somewhere*; Phase 8 asks whether the documents themselves are *well-placed*, and whether a community — not just a codebase — has its standards written down. Runs in conjunction with Phase 0: the ownership gate fires a doc-topology pre-scan, and Phase 8 closes the loop with the full reconciliation.
+
+### Doc-topology checklist 🗺️
+
+- **Where do docs live?** Map the doc surfaces — `README.md`, `docs/`, ADRs, PRDs, `CONTRIBUTING.md`, wiki, in-repo `CONTEXT.md`. Is the layout legible to a newcomer, or does institutional knowledge live only in commit messages?
+- **What exists where?** Inventory every doc file and where it sits. A spec under `src/` next to code, an ADR loose at repo root, a `docs/` folder with one stale file — all topology smells.
+- **Placement within the infrastructure.** Is each doc where a reader would look for it? Setup steps belong in `CONTRIBUTING.md`/README, decisions in `docs/adr/`, API contracts beside the generated spec. Move misfiled docs to where they're discoverable.
+- **Core-beliefs re-test.** Re-read the repo's foundational docs (README intro, top ADRs, CONTEXT.md) against the *latest* changes — not just the docs for the change under review. Did this sweep quietly invalidate a stated principle? Flag drift.
+- **Cross-repo canonical-source check.** When the same wiki/docs/standards appear in multiple repos, confirm which copy is canonical and stub the mirror with a pointer — cross-reference Phase 7's [canonical content source check](SKILL.md#phase-7--docs-rundown-). A Community-Standards doc reproduced as a worked example elsewhere must say so, and name its home.
+
+### Community-Standards boilerplate
+
+The 5-section template below is **never offered proactively** — it's reference material for when the user *explicitly* asks to draft community policy (never auto-created). It's a starting frame for a community that wants to write down what it stands for:
+
+```
+1. Statement of Intention & Values: This section establishes why your group is a "community" rather than just a "group of interests". "Our community exists to foster mutual concern, trust, and shared growth among all members. We are united by our shared belief in [Insert Core Value 1] and [Insert Core Value 2]. We measure our success not by self-gain, but by how we advance the welfare of one another."
+
+2. The Boundary Principle: This clarifies who belongs and sets expectations for behavioral safety. "Membership is a recognized demarcation that allows our members to feel safe. While we welcome Explorers and Visitors to designated public spaces, full membership requires shared alignment with our values. Members are expected to treat others as they wish to be treated in real life and respect the privacy of their peers."
+
+3. Moral Prescriptions & What We Protect: This defines intolerable behavior and states what the community defends. "What we protect: We protect the dignity, safety, and mutual respect of all members. What is intolerable: Personal attacks, harassment, or using the community strictly for self-promotion without contribution to the broader welfare are unacceptable. We reserve the right to respectfully hand down consequences or separate individuals from the community whose actions threaten the safety of the whole."
+
+4. Pathways for Belonging (Inner Rings): This provides a path for members to deepen their participation and serve others. "Healthy communities make paths for members to grow and deepen their participation over time. Members have the opportunity to take on responsibilities, organize rituals, mentor newer members, and advance to leadership (Elder) roles based on demonstrated maturity and selfless service to the group."
+
+5. Community Contact & Governance: This establishes who manages the community, as outlined in guides like CommunityRule. "This community is supported by [leadership title, e.g., an elected board/principal elders] who guide our values and officiate our shared rituals. For support, questions, or to report a violation, please contact the community managers directly at [Contact Email]."
+```

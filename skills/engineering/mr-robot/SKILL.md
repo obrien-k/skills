@@ -36,6 +36,8 @@ Principles, not a script. Resolve the actual remote name, host, and branch from 
 - **Repo going private soon** → migration gate first: identify public-facing content (wiki, docs, Docusaurus sites) that must move to a public repo before the switch. Resolve the migration before any housekeeping.
 - **Resolve the Sweep Context, then branch on the Ownership Gate.** Run `scripts/resolve-context.sh` once (recipe + verdict table in [REFERENCE.md §Phase 0](REFERENCE.md)); it emits `RC_MODE` (`local-only` / `proceed` / `hard-stop` / `needs-confirm`) plus `RC_REMOTE` / `RC_HOST` / `RC_OWNER` / `RC_REPO` / `RC_DEFAULT`. Every later phase consumes that context — never re-resolve the remote or default branch by hand. The gate is **fail-closed**: only `proceed` greenlights remote ops.
 
+Phase 0 also runs the **Phase 8 doc-topology pre-scan** — a quick read of where the repo's documents live and which standards docs exist (or are absent) before any work starts. It only *records* this; it never offers to create anything. Phase 0 and Phase 8 bookend each other: the pre-scan here, the full reconciliation at the end. 📜
+
 ### Phase 1 — Grill 🌸
 
 **Read context first.** Before grilling, scan all in-scope repos for `CONTEXT.md`, `docs/CONTEXT.md`, `handoff.md`, `.handoff-*.md`, and open issues. Synthesize what's in-flight — active WIP branches, pending next steps, cross-repo dependencies — and confirm scope with the user before proceeding. For multi-repo sweeps, diff the CONTEXT.md files against each other and flag mismatches as Phase 7 debt.
@@ -104,6 +106,14 @@ Ask of every notable feature or decision: *"Has this been documented (issue, PRD
 - **Map docs→code** — hand documented slices to [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md); escalate gaps to [`/grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-with-docs/SKILL.md).
 
 File docs changes only with user confirmation.
+
+### Phase 8 — Doc Topology & Community Standards 📜
+
+The end-game. By here the branches are swept and the docs are written — Phase 8 asks whether we built a universe that doesn't fall apart two days later.
+
+**Runs in conjunction with Phase 0.** A continual doc-topology reconciliation: where do our documents live, what files exist where, how well are they placed within the infrastructure? Re-test the repo's **core beliefs** against the latest changes — not just the docs for the change under review, the whole topology. Phase 0 fired the pre-scan; Phase 8 closes the loop.
+
+**Community-Standards — note, don't nag.** Report which standards exist or are absent (`LICENSE`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `Privacy-Policy.md`, `Terms-of-Service.md`, governance/golden-rules) as part of the topology — but **never proactively offer to create them**. The boilerplate ([REFERENCE.md](REFERENCE.md)) and any policy/legal drafting happen **only when the user explicitly invokes that work**. Never auto-create legal docs. 🤝
 
 ---
 
