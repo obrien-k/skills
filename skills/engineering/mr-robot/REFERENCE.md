@@ -4,6 +4,8 @@ Command recipes and the lessons behind each rule. SKILL.md carries the principle
 
 Sources: founding session (orphic-inc/stellar-api, 2026-05-31) and a battle-testing pass across a 24-repo `~/git/` folder (third-party clones, no-remote repos, a 59-branch graveyard, `gh`-named remotes, duplicate clones).
 
+**Design rationale.** Why Mr. Robot is a skill + bash scripts (and *not* an MCP): determinism is the line — judgment stays in the skill, deterministic mechanics are guard-scripts the skill calls; destructive ops are API-only and enforced by a `git-guardrails` hook, not an MCP. The MCP is deferred indefinitely. See [rocky-pi ADR-0002](https://github.com/obrien-k/rocky-pi/blob/main/docs/adr/0002-mr-robot-skill-mcp-split.md).
+
 ## Phase 0 — Sweep Context + the Ownership Gate
 
 The single most important guard. Most failure modes are fail-*open* (acting on a repo you shouldn't). Resolve it **once** with [`scripts/resolve-context.sh`](scripts/resolve-context.sh) — a read-only resolver that emits the **Sweep Context** (the resolved facts every later phase consumes) with the **Ownership Gate** verdict in its `RC_MODE` field. Don't re-derive `$RC_REMOTE`/`$RC_DEFAULT` per phase; source it here and reuse.
