@@ -45,6 +45,14 @@ Outside the repo, name it `<owner>-<repo>-<date>.md`. Entries:
 
 Phases talk to each other through the ledger, not through scrollback — scrollback is where cross-phase memory goes to die. Phases 9 and 10 consume the ledger exclusively: if it isn't in the file, it didn't happen. The tape is rolling. 🎙️
 
+**Phase banners (every phase, on entry).** 🎶 The playlist maps 1:1 onto Phases 1–10 (see [Playlist](#playlist-)). Announce each phase as you enter it with a minimal visualization the user can track the sweep by:
+
+```
+▶ Phase 4 — Fork Sync 🌿 ── 🎵 "Kill the Switch" — Circle Takes the Square
+```
+
+Add a lyric fragment when the corpus genuinely carries one — one short line at most, paraphrased when unsure, never a verse; skip it rather than guess. The setlist closes on *Such Great Heights* — Phase 10 is the summit. `--plain` suppresses banners entirely.
+
 ### Phase 0 — Ownership Gate 🚦 (hard stop)
 
 **Scope repos first.** Ask which repos are in scope — paired repos (API + UI, fork + upstream, a microservice cluster) drift in lockstep. If the user names one repo of an obvious pair, ask whether the sibling needs the same sweep.
@@ -174,18 +182,20 @@ Kill the switch on the way out. 🎯
 
 ## Playlist 🎵
 
-| | Track | Artist | Album |
-|---|---|---|---|
-| 🪕🎭 | Idioteque | Amanda Palmer | *...Performs Radiohead On Her Magical Ukelele* |
-| 🌊🎙️ | The Rip | Portishead | *Third* |
-| ʕ⁎̯͡⁎ʔ🐱 | Yellow Cat (Slash) Red Cat | Say Anything | *...Is a Real Boy* |
-| 🔀🎯 | Kill the Switch | Circle Takes the Square | *As the Roots Undo* |
-| 📄📱 | Tslamp (Matthew Dear Remix) | MGMT | *Little Dark Age (Matthew Dear Album Remix)* |
-| 🎫🫦 | Only | Nine Inch Nails | *With Teeth* |
-| ☣️🈳 | Toxicity | System of a Down | *Toxicity* |
-| 🥋⛵ | Float On | Modest Mouse | *Good News for People Who Love Bad News* |
-| 🔍📸 | Paparazzi | Lady Gaga | *The Fame Monster* |
-| 🔁🧗 | Such Great Heights | The Postal Service | *Give Up* |
+One track per phase — the sweep *is* the setlist. Phase 1 drops the needle; Phase 10 reaches *Such Great Heights*.
+
+| Phase | | Track | Artist | Album |
+|---|---|---|---|---|
+| 1 — Grill 🌸 | 🪕🎭 | Idioteque | Amanda Palmer | *...Performs Radiohead On Her Magical Ukelele* |
+| 2 — Branch Cleanup 🧹 | 🌊🎙️ | The Rip | Portishead | *Third* |
+| 3 — Version Tags 🏷️ | ʕ⁎̯͡⁎ʔ🐱 | Yellow Cat (Slash) Red Cat | Say Anything | *...Is a Real Boy* |
+| 4 — Fork Sync 🌿 | 🔀🎯 | Kill the Switch | Circle Takes the Square | *As the Roots Undo* |
+| 5 — CHANGELOG 📝 | 📄📱 | Tslamp (Matthew Dear Remix) | MGMT | *Little Dark Age (Matthew Dear Album Remix)* |
+| 6 — Stub Tracking 🌱 | 🎫🫦 | Only | Nine Inch Nails | *With Teeth* |
+| 7 — Docs Rundown 🏮 | ☣️🈳 | Toxicity | System of a Down | *Toxicity* |
+| 8 — Doc Topology 📜 | 🥋⛵ | Float On | Modest Mouse | *Good News for People Who Love Bad News* |
+| 9 — Reconcile 🔍 | 🔍📸 | Paparazzi | Lady Gaga | *The Fame Monster* |
+| 10 — Kill the Switch 🎯 | 🔁🧗 | Such Great Heights | The Postal Service | *Give Up* |
 
 ---
 
