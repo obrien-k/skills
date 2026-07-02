@@ -124,7 +124,13 @@ The end-game. By here the branches are swept and the docs are written — Phase 
 | 🪕🎭 | Idioteque | Amanda Palmer | *...Performs Radiohead On Her Magical Ukelele* |
 | 🌊🎙️ | The Rip | Portishead | *Third* |
 | ʕ⁎̯͡⁎ʔ🐱 | Yellow Cat (Slash) Red Cat | Say Anything | *...Is a Real Boy* |
-| 🔁🎯 | Kill the Switch | Circle Takes the Square | *As the Roots Undo* |
+| 🔀🎯 | Kill the Switch | Circle Takes the Square | *As the Roots Undo* |
+| 📄📱 | Tslamp (Matthew Dear Remix) | MGMT | *Little Dark Age (Matthew Dear Album Remix)* |
+| 🎫🫦 | Only | Nine Inch Nails | *With Teeth* |
+| ☣️🈳 | Toxicity | System of a Down | *Toxicity* |
+| 🥋⛵ | Float On | Modest Mouse | *Good News for People Who Love Bad News* |
+| 🔍📸 | Paparazzi | Lady Gaga | *The Fame Monster* |
+| 🔁🧗 | Such Great Heights | The Postal Service | *Give Up* |
 
 ---
 
