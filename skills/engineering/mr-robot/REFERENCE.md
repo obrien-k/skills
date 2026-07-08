@@ -193,7 +193,7 @@ git log --oneline <prev-tag>..<new-tag>
 - Then grep language-agnostic markers: `TODO`/`FIXME`/`HACK`, `raise NotImplementedError`, `todo!()`/`unimplemented!()`, `throw new Error(... not implemented)`, HTTP `501`.
 - Worth tracking: live-but-incomplete features — a route returning bare `{}`, a model with no write path. Not broken, just unfinished.
 - File issues only with explicit user authorization; otherwise note in memory.
-- Retrospective by nature — finds gaps in existing code. Starting fresh? Use [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) instead.
+- Retrospective by nature — finds gaps in existing code. Starting fresh? Use `/tdd` instead.
 
 ## Phase 7 — Docs Rundown
 
@@ -213,7 +213,7 @@ Confirm the PRD/ADR numbering owner and existing sequence before adding. Reserve
 
 ### Record decisions, map to code, descend
 
-Anything *decided* in the sweep (versioning, allowed merge style, migration/scoring approach) → an ADR; a new capability → a PRD. Pin ambiguous spec as executable interpretation and flag it, rather than leaving it implicit. A good PRD is a decision-tree into *existing* testable worktrees, not greenfield prose — note where each concept already lives in code, then hand the slice to [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) for the red-green descent. The end-of-sweep trio: [`/doc-coauthoring`](https://github.com/anthropics/skills) (authoring), [`/grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-with-docs/SKILL.md) (stress-test vs the domain model), [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md) (descend to tests). Keep specs lean; don't spec-hell.
+Anything *decided* in the sweep (versioning, allowed merge style, migration/scoring approach) → an ADR; a new capability → a PRD. Pin ambiguous spec as executable interpretation and flag it, rather than leaving it implicit. A good PRD is a decision-tree into *existing* testable worktrees, not greenfield prose — note where each concept already lives in code, then hand the slice to `/tdd` for the red-green descent. The end-of-sweep trio: `/doc-coauthoring` (authoring), `/grill-with-docs` (stress-test vs the domain model), `/tdd` (descend to tests). Keep specs lean; don't spec-hell.
 
 ## Phase 8 — Doc Topology & Community Standards
 
