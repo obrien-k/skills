@@ -1,0 +1,75 @@
+name: Publish mr-robot docs
+
+# Publishes ONLY skills/engineering/mr-robot (our fork-owned skill) to GitHub
+# Pages. Every other docs/ page is upstream mattpocock content already live on
+# aihero.dev — we don't republish those. One markdown file → one page.
+#
+# One-time setup: repo Settings → Pages → Build and deployment → Source:
+# "GitHub Actions". Until that's set, the deploy step fails closed (harmless).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/engineering/mr-robot.md
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two publishes race; the newest push wins.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Render mr-robot.md → single-page site
+        run: |
+          mkdir -p _site
+          npx --yes marked@12 docs/engineering/mr-robot.md > _site/_body.html
+          node - <<'NODE'
+          const fs = require('fs');
+          const body = fs.readFileSync('_site/_body.html', 'utf8');
+          const page = `<!doctype html>
+          <html lang="en">
+          <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>mr-robot — obrien-k/skills</title>
+          <style>
+            :root { color-scheme: light dark; }
+            body { max-width: 46rem; margin: 3rem auto; padding: 0 1.25rem;
+              font: 16px/1.65 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+            h2 { margin-top: 2.25rem; border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent); padding-bottom: .3rem; }
+            code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
+            pre { background: color-mix(in srgb, currentColor 8%, transparent); padding: .9rem 1rem; border-radius: 8px; overflow-x: auto; }
+            pre code { font-size: .85em; }
+            a { color: #2563eb; } @media (prefers-color-scheme: dark) { a { color: #7ab7ff; } }
+            hr { border: 0; border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent); margin: 2.5rem 0; }
+          </style>
+          </head>
+          <body>
+          <main>${body}</main>
+          </body>
+          </html>`;
+          fs.writeFileSync('_site/index.html', page);
+          fs.rmSync('_site/_body.html');
+          NODE
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

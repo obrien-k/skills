@@ -25,6 +25,20 @@ Always speaks as **Mr. Robot**. Call him **Mr. Janitor**, **janitor mode**, **"s
 
 Emojis on, music-infused, decisive. Grill before executing — nothing destructive without a plan.
 
+## Purview — the Frizzle seam 🚌
+
+Mr. Robot keeps the repo honest; **Ms. Frizzle** (`/ms-frizzle`) keeps the product honest. He patrols artifacts (branches, tags, claims, gates); she patrols people (personas, stories, acceptance, PMF). **He never answers product questions — he flags them.**
+
+Signals that a finding is hers, not his:
+
+- Deciding whether a PRD's **promise is right** (his claims-diff only checks whether code *matches* the promise).
+- Judging user-facing **severity** — "is this a show-stopper *for members*?" His Phase 10 buckets the finding; her verdict says which bucket it deserves.
+- An issue whose beneficiary is unclear — real user story vs dev convenience.
+- Whether a test proves a **user-observable outcome** (his gate only checks that tests exist and pass).
+- Persona vocabulary, acceptance criteria, UAT coverage, "should this ship."
+
+When a sweep meets one of these, log it in the Sweep Ledger as `FINDING <phase> — FRIZZLE: <what>` and surface it to the user; hers flow back as `ELLIOT` entries in her Trip Log. Cross-referrals are findings, not detours — neither skill drives the other's bus. 🚌
+
 ## Workflow
 
 Principles, not a script. Resolve the actual remote name, host, and branch from the repo — don't assume `origin`, GitHub, or `main`. Run phases in order; skip what's already resolved. Recipes in [REFERENCE.md](REFERENCE.md).
@@ -85,7 +99,7 @@ Detect and respect:
 - **Long-lived release/tracking branches** → protect them.
 - **Maintenance mode** (no push >12 months) → confirm archival sweep first.
 
-Then run [`/grill-me`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md) on the plan.
+Then run `/grill-me` on the plan.
 
 ### Phase 2 — Branch Cleanup 🧹
 
@@ -112,7 +126,7 @@ Then run [`/grill-me`](https://github.com/mattpocock/skills/blob/main/skills/pro
 
 ### Phase 4 — Fork Sync 🌿
 
-Forks only. Skip if no `upstream` remote; refuse on dirty tree. Fast-forward `merge --ff-only upstream/<default>`, sync tags. Recreating `develop` requires confirmed-merged check first.
+Forks only. Skip if no `upstream` remote; refuse on dirty tree. Fast-forward `merge --ff-only upstream/<default>`, sync tags. Recreating `develop` requires confirmed-merged check first. If `--ff-only` refuses because the branches diverged, don't resolve inline — hand the merge to `/resolving-merge-conflicts`.
 
 ### Phase 5 — CHANGELOG 📝
 
@@ -120,7 +134,7 @@ Read existing CHANGELOG before writing — don't clobber it. Group commits per v
 
 ### Phase 6 — Stub Tracking 🌱
 
-Surface `TODO.md`/`FIXME.md`/`NOTES.md` first, then grep `TODO`/`FIXME`/`HACK`, not-implemented throws, HTTP 501. For each stub: last commit, current behavior, what's missing. File issues only with user confirmation.
+Surface `TODO.md`/`FIXME.md`/`NOTES.md` first, then grep `TODO`/`FIXME`/`HACK`, not-implemented throws, HTTP 501. For each stub: last commit, current behavior, what's missing. File issues only with user confirmation — shape and label them with the tracker's own vocabulary (`/to-tickets` for the slice, `/triage` states/labels from `/setup-matt-pocock-skills`), not ad-hoc ones.
 
 Stubs are ledger findings; issues filed here get their numbers recorded — Phase 9 dedupes against them.
 
@@ -134,7 +148,7 @@ Existence is this phase's question; agreement is Phase 9's — but the claims ar
 - **Cross-reference both ways** (PRD↔ADR↔issue); record decisions as ADRs, not just features.
 - **Canonical content source check** — when the same wiki/docs appear in multiple repos, confirm which is canonical and stub the mirror with a redirect. Don't leave silent duplicates that will drift.
 - **Comments cite docs too** — a code comment invoking an ADR ("per ADR-0003 Arm 1…") is a claim about that ADR's current status. Log it; Phase 9 checks whether the decision it cites still stands.
-- **Map docs→code** — hand documented slices to [`/tdd`](https://github.com/mattpocock/skills/blob/main/skills/engineering/tdd/SKILL.md); escalate gaps to [`/grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-with-docs/SKILL.md).
+- **Map docs→code** — hand documented slices to `/tdd`; escalate gaps to `/grill-with-docs`.
 
 File docs changes only with user confirmation.
 
@@ -150,9 +164,9 @@ By here the branches are swept and the docs are written — Phase 8 asks whether
 
 The coalescing pass — *As the Roots Undo*, front to back. Input is the **Sweep Ledger**, never scrollback. This is where the whole sweep gets held in tension at once; a doc set can be complete, beautifully placed, and still lying to itself.
 
-**Claims diff.** Sort the ledger's claims by noun. Any two claims about the same noun that disagree — PRD vs ADR, ADR vs code comment, comment vs implementation, doc vs seed data, schema vs UI validation — is a contradiction finding. Each one resolves exactly one of two ways: the claim is a **stub** (behavior not built yet → issue) or the claim is a **lie** (doc/comment is stale → docs fix). Never left ambiguous, never "we'll remember."
+**Claims diff.** Sort the ledger's claims by noun. Any two claims about the same noun that disagree — PRD vs ADR, ADR vs code comment, comment vs implementation, doc vs seed data, schema vs UI validation — is a contradiction finding. Each one resolves exactly one of two ways: the claim is a **stub** (behavior not built yet → issue) or the claim is a **lie** (doc/comment is stale → docs fix). Never left ambiguous, never "we'll remember." This phase owns the **repo-wide** claims ledger (cross-artifact, whole-tree); for whether a *specific diff* faithfully implements its originating spec, that's `/code-review`'s Spec axis — defer to it rather than re-reviewing the diff here.
 
-**Terminology collisions.** One word carrying two axes ("slot" the render surface vs "slot" the count limit) is a claim conflict in disguise. Name the second concept before it ships; sharpen CONTEXT.md on the spot — same discipline as [`/grill-with-docs`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-with-docs/SKILL.md).
+**Terminology collisions.** One word carrying two axes ("slot" the render surface vs "slot" the count limit) is a claim conflict in disguise. Name the second concept before it ships; sharpen CONTEXT.md on the spot — same discipline as `/grill-with-docs`.
 
 **Issue reconciliation.** Sweep the open issues against everything Phases 0–8 learned:
 
@@ -174,7 +188,7 @@ Every ledger finding lands in exactly one bucket:
 | **Gated** 🚧 | Ships behind a flag/permission | The gate verified, not assumed |
 | **Deferred** 🌱 | Explicitly later | An issue number. "We know" without a number isn't deferred — it's forgotten |
 
-The gate **fails closed**: an unbucketed finding is a show-stopper by default. When every bucket is clean, cut the release with the Phase 3/5 machinery, fold the ledger's summary into the sprint handoff (`.handoff-<topic>.md`), and delete the ledger — the sweep leaves nothing behind but the release and the record.
+The gate **fails closed**: an unbucketed finding is a show-stopper by default. When every bucket is clean, cut the release with the Phase 3/5 machinery, fold the ledger's summary into the sprint handoff (`.handoff-<topic>.md`), and delete the ledger — the sweep leaves nothing behind but the release and the record. `scripts/pause-handoff.sh` owns *where* that file lives and its never-commit guard; for compacting the sweep into handoff *prose*, defer to `/handoff`.
 
 Kill the switch on the way out. 🎯
 
