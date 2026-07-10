@@ -51,4 +51,4 @@ changelogs should be automated and running continuously — where Mr. Robot earn
 keep is the **end-of-sprint sweep**: consolidate the scattered, clear the branch
 graveyard, give the repo a consistent pulse, then get out of the way.
 
-*The sweep ends when the setlist does — "Kill the Switch" on the way out.* 🎯
+*The sweep ends when the setlist does — "Such Great Heights" on the way out.* 🎯
